@@ -68,7 +68,7 @@ wRandomforest <- function(data = NULL, col.x = NULL, y = NULL, xtest=NULL,ytest=
                    nodesize = if (!is.null(y) && !is.factor(y)) 5 else 1, maxnodes=NULL,
                    importance = FALSE, proximity = FALSE, oob.prox=proximity, 
                    norm.votes=TRUE, do.trace=FALSE,
-                   keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
+                   keep.forest=TRUE, corr.bias=FALSE,
                    keep.inbag=FALSE, ...){
 
   # Stops and messages:
