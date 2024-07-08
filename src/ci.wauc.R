@@ -6,7 +6,7 @@ options(survey.lonely.psu='remove')
 
 #set.seed(234)
 ci.wauc<- function(y,yhat,tag.event = 1, tag.nonevent = 0,weights=NULL,cluster=NULL,strata=NULL,design=NULL,
-                   type=c("bootstrap", "subbootstrap"), 
+                   type=c("JKn", "bootstrap", "subbootstrap", "BRR"), 
                    fpc=NULL,fpctype=NULL,..., compress=TRUE,
                    mse=getOption("survey.replicates.mse"),B,conf.level=0.95){
   
@@ -47,14 +47,14 @@ ci.wauc<- function(y,yhat,tag.event = 1, tag.nonevent = 0,weights=NULL,cluster=N
   
   
   # Generate replicate weights based on the selected method
-  # if(type %in% c("bootstrap", "subbootstrap")){
+  if(type %in% c("JKn", "bootstrap", "subbootstrap", "BRR")){
     
-    # if(type %in% c("bootstrap", "subbootstrap")){
+    if(type %in% c("bootstrap", "subbootstrap")){
       rep.des <- survey::as.svrepdesign(design = des, type = type, replicates = B)
-    # } else {
-    #   rep.des <- survey::as.svrepdesign(design = des, type = type)
-    # }
-  # }
+    } else {
+      rep.des <- survey::as.svrepdesign(design = des, type = type)
+    }
+  }
       rep.weights<-rep.des$repweights$weights
   
   # Compute wAUC replicates by the selected method    
