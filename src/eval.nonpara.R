@@ -137,7 +137,7 @@ evalerror.reg <- function(preds,dtrain){
     weights<- getinfo(dtrain,"weight")
     err<- stats::weighted.mean((labels-preds)^2,weights,na.rm=TRUE)
 
-    return(list(metric="root-weighted.mse", value=err))
+    return(list(metric="weighted.mse", value=err))
 
 }
 

@@ -1,6 +1,6 @@
 #' Replicate weights
 #'
-#' @description This function allows calculating replicate weights.
+#' @description This function allows calculating replicate weights imported from R-\code{wlasso} library.
 #'
 #' @param data A data frame with information on (at least) cluster and strata indicators, and sampling weights. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument (see \code{design}).
 #' @param method A character string indicating the method to be applied to define replicate weights. Choose between one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
@@ -39,7 +39,11 @@
 #' in the data set has been included in each partition. This information is included as \code{fold_t} or \code{set_t},
 #' depending on the method. See more detailed information below.
 #'
-#'
+#' @author Amaia Iparragirre
+#' @references \url{https://github.com/aiparragirre/wlasso}
+#' 
+#' 
+#' 
 #' @export
 #'
 #' @examples
