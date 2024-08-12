@@ -1,6 +1,7 @@
 #' Weighted Elastic Net prediction models for complex survey data
 #'
-#'@description This function allows as to fit Elastic Net prediction (linear or logistic) models to complex survey data, considering sampling weights in the estimation process and selects the lambda that minimizes the error based on different replicating weights methods.
+#'@description This function fits Elastic Net prediction (linear or logistic) models to complex survey data, using sampling weights in the estimation process 
+#'            and selects the lambda that minimizes the error based on different replicating weights methods.
 #'
 #' @param data A data frame with information about the response variable and covariates, as well as sampling weights and strata and cluster indicators. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument.
 #' @param col.y A numeric value indicating the number of the column in which information on the response variable can be found or a character string indicating the name of that column.
@@ -24,7 +25,7 @@
 #' @importFrom graphics abline mtext
 #' @importFrom stats as.formula coef predict runif
 #'
-#' @return The output object of the function \code{wlasso()} is an object of class \code{wlasso}. This object is a list containing 4 or 5 elements, depending on the value set to the argument \code{print.rw}. Below we describe the contents of these elements:
+#' @return The output object of the function \code{welnet()} is an object of class \code{w.elnet}. This object is a list containing 4 or 5 elements, depending on the value set to the argument \code{print.rw}. Below we describe the contents of these elements:
 #' - `lambda`: A list containing information of two elements:
 #'   - `grid`: A numeric vector indicating all the values considered for the tuning parameter.
 #'   - `min`: A numeric value indicating the value of the tuning parameter that minimizes the average error (i.e., selected optimal tuning parameter).
@@ -45,7 +46,7 @@
 #' @export
 #'
 #' @examples
-#' data(simdata_lasso_binomial)
+#' 
 #' mcv <- welnet(data = simdata_lasso_binomial,
 #'               col.y = "y", col.x = 1:50,
 #'               family = "binomial", alpha = 0.729,
@@ -199,7 +200,7 @@ welnet <- function(data = NULL, col.y = NULL, col.x = NULL,
 
   if(print.rw == TRUE){result$data.rw <- newdata}
 
-  class(result) <- "wlasso"
+  class(result) <- "w.elnet"
 
   return(result)
 

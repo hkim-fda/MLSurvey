@@ -1,10 +1,15 @@
 #' Weighted Random Forest prediction models for complex survey data
-#'
-#'@description This function allows as to fit weighted random forest prediction (linear or logistic) models to complex survey data, considering sampling weights in the estimation process and selects the lambda that minimizes the error based on different replicating weights methods.
+#' 
+#'@description This function fits weighted random forest prediction (linear or logistic) models to complex survey data using sampling weights in the estimation process and 
+#'             selects the tuning parameters that minimize the error based on different replicating weights methods.  Detailed arguments refer to R-\code{randomForest}.
 #'
 #' @param data A data frame with information about independent variables, as well as sampling weights and strata and cluster indicators. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument.
 #' @param y A vector of the response variable. If a factor, classification is assumed, otherwise, regression is assumed. If omitted, randomForest will run in a unsupervised mode.
 #' @param col.x A numeric vector indicating indices of columns for covariates or independent variables or a vector of character strings indicating names of these columns.
+#' @param xtest A data frame or matrix containing predictors for the test set.
+#' @param ytest A vector of response variable for the test set. 
+#' @param mtree The number of trees to grow. This should not set to be too small a number, to ensure that every input row gets predicted at least a few times.
+#' @param mtry  The number of variables randomly sampled as candidates at each split. Note that the default values are different for classification (sqrt(p) where p is number of variables in x) and regression (p/3)
 #' @param cluster A character string indicating the name of the column of cluster identifiers. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument.
 #' @param strata A character string indicating the name of the column of strata identifiers. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument.
 #' @param weights A character string indicating the name of the column of sampling weights. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument.
@@ -17,44 +22,43 @@
 #' @param train.prob A numeric value between 0 and 1, indicating the proportion of clusters (for the method \code{split}) or strata (for the method \code{extrapolation}) to be set in the training sets. Default is \code{train.prob = 0.7}. Only applies for \code{split} and \code{extrapolation} methods.
 #' @param method.split A character string indicating the way in which replicate weights should be defined in the \code{split} method. Choose one of the following: \code{dCV}, \code{bootstrap} or \code{subbootstrap}. Only applies for \code{split} method.
 #' @param print.rw A logical value. If \code{TRUE}, the data set with the replicate weights is saved in the output object. Default \code{print.rw=FALSE}.
-#' @param ... options to be given to \code{r-randomForest}
+#' @param ... optional parameters to be passed to the low level function \code{randomForest.default} in R-\code{randomForest}.
 #' @importFrom graphics abline mtext
 #' @importFrom stats as.formula coef predict runif
 #'
-#' @return The output object of the function \code{wRandomforest()} is an object of class \code{wRandomforest}. This object is a list containing 4 or 5 elements, depending on the value set to the argument \code{print.rw}. Below we describe the contents of these elements:
-#' - `lambda`: A list containing information of two elements:
-#'   - `grid`: A numeric vector indicating all the values considered for the tuning parameter.
-#'   - `min`: A numeric value indicating the value of the tuning parameter that minimizes the average error (i.e., selected optimal tuning parameter).
-#' - `error`: A list containing information of two elements:
-#'   - `average`: A numeric vector indicating the average error corresponding to each tuning parameter.
-#'   - `all`: A numeric matrix indicating the error of each test set for each tuning parameter.
-#' - `model`: A list containing information of two elements in relation to the fitted models. Note that all these models are fitted considering the whole data set (and not uniquely the training sets).
-#'   - `grid`: A list with the information about the models fitted for each of the tuning parameters considered (i.e., all the values in the \code{lambda$grid} object):
-#'     - `a0`: a numeric vector of model intercepts across the whole grid of tuning parameters (hence, of the same length as \code{lambda$grid}).
-#'     - `beta`: a matrix of regression coefficients corresponding to all the considered covariates across the whole grid of tuning parameters (the number of rows is equal to the number of covariates considered and the number of columns to the length of \code{lambda$grid}).
-#'     - `df`: a numeric vector of the degrees of freedom (i.e., the number of coefficients different from zero) across the whole grid of tuning parameters  (hence, of the same length as \code{lambda$grid}).
-#'   - `min`: A list with the information about the model fitted considering uniquely the tuning parameter that minimizes the error in the training models (i.e., the optimal tuning parameter selected between the elements in \code{lambda$grid}):
-#'     - `a0`: a numeric value indicating the intercept value of the selected model.
-#'     - `beta`: a matrix of regression coefficients corresponding to all the considered covariates for the selected tuning parameters (the number of rows is equal to the number of covariates considered and the number of columns is one).
-#'     - `df`: a numeric value indicating the degrees of freedom (i.e., the number of coefficients different from zero) of the selected model.
+#' @seealso [randomForest::randomForest()] for detailed arguments' explanation.
+#'
+#' @return The output object of the function \code{wRandomforest()} is an object of class \code{w.randomforest}. This object is a list containing 4 or 5 elements, depending on the value set to the argument \code{print.rw}. Below we describe the contents of these elements:
+#' - `mtry`: A list containing information of two elements:
+#'   - `all`: A numeric vector indicating all the values considered for the tuning parameter.
+#'   - `optimal.mtry`: A numeric value indicating the value of the tuning parameter that minimizes the average error (i.e., selected optimal tuning parameter).
+#' - `evaluation_log`: A list containing information of two elements:
+#'   - `weighted.test.error`: A numeric vector indicating the average error corresponding to each tuning parameter.
+#'   - `min.weighted.test.error`: A numeric matrix indicating the error of each test set for each tuning parameter.
+#' - `model`: A list containing information on the fitted model: An object of class \code{randomForest} found in R-\code{randomForest}. 
+#'           Note that the selected model is fitted by the whole data set (and not uniquely the training sets).
+#'   
 #' - `data.rw`: A data frame containing the original data set and the replicate weights added to define training and test sets. Only included in the output object if \code{print.rw=TRUE}.
 #' - `call`: an object containing the information about the way in which the function has been run.
 #' @export
 #'
 #' @examples
-#' data(simdata_lasso_binomial)
-#' mcv <- wlasso(data = simdata_lasso_binomial,
-#'               col.y = "y", col.x = 1:50,
-#'               family = "binomial",
+#' #to avoid only one PSU in a stratum
+#' options(survey.adjust.domain.lonely=TRUE)
+#' options(survey.lonely.psu="adjust")
+#'  
+#'  # for classification: y should be a factor.
+#' dcv.rf <- wRandomForest(data = Mydata,
+#'               y = as.factor(y), col.x = 1:50,xtest=tdata[,1:50],ytest=tdata$y,
 #'               cluster = "cluster", strata = "strata", weights = "weights",
-#'               method = "dCV", k=10, R=20)
+#'               method = "dCV", k=5 R=5,importance=TRUE,proximity = TRUE)
 #'
 #' # Or equivalently:
 #' mydesign <- survey::svydesign(ids=~cluster, strata = ~strata, weights = ~weights,
-#'                               nest = TRUE, data = simdata_lasso_binomial)
-#' mcv <- wlasso(col.y = "y", col.x = 1:50, design = mydesign,
-#'               family = "binomial",
-#'               method = "dCV", k=10, R=20)
+#'                               nest = TRUE, data =Mydata)
+#' dcv.rf <- wRandomForest(y = as.factor(y), col.x = 1:50, design = mydesign,xtest=tdata[,1:50],ytest=tdata$y,
+#'                         importance=TRUE,proximity = TRUE,
+#'                         method = "dCV", k=5, R=5)
 
 
 wRandomforest <- function(data = NULL, col.x = NULL, y = NULL, xtest=NULL,ytest=NULL,
@@ -180,7 +184,7 @@ wRandomforest <- function(data = NULL, col.x = NULL, y = NULL, xtest=NULL,ytest=
 
   if(print.rw == TRUE){result$data.rw <- newdata}
 
-  class(result) <- "wRandomforest"
+  class(result) <- "w.randomforest"
 
   return(result)
 

@@ -1,7 +1,7 @@
 #' Weighted Xgboost prediction models for complex survey data
 #'
 #'@description This function fits Xgboost prediction (linear or logistic) models to complex survey data, using sampling weights in the estimation process and 
-#'             selects the tuning parameters that minimizes the error based on different replicating weights methods.  Detailed arguments refer to R-\code{xgboost}.
+#'             selects the tuning parameters that minimize the error based on different replicating weights methods.  Detailed arguments refer to R-\code{xgboost}.
 #'
 #' @param data A data frame with information about the response variable and covariates, as well as sampling weights and strata and cluster indicators. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument.
 #' @param y A numeric vector of response variable. 
@@ -31,7 +31,7 @@
 #' 
 #' @seealso [xgboost::xgb.train()] for relevant arguments. 
 #'
-#' @return The output object of the function \code{wxgboost()} is an object of class \code{wxgboost}. This object is a list containing 4 or 5 elements, depending on the value set to the argument \code{print.rw}. Below we describe the contents of these elements:
+#' @return The output object of the function \code{wxgboost()} is an object of class \code{w.xgboost}. This object is a list containing 4 or 5 elements, depending on the value set to the argument \code{print.rw}. Below we describe the contents of these elements:
 #' - `CV.iterations`: A list containing information of three elements:
 #'   - `niter.range.per.R`: A numeric vector indicating all the values considered for the tuning parameter.
 #'   - `k_fold.best`: A numeric value indicating the value of the tuning parameter that minimizes the average error (i.e., selected optimal tuning parameter).
@@ -46,18 +46,28 @@
 #' @export
 #'
 #' @examples
-#' data(simdata_lasso_binomial)
-#' mcv <- wlasso(data = simdata_lasso_binomial,
-#'               col.y = "y", col.x = 1:50,
-#'               family = "binomial",
+#'  Do not run!!
+#'  #to avoid only one PSU in a stratum
+#'    options(survey.adjust.domain.lonely=TRUE)
+#'    options(survey.lonely.psu="adjust")
+#'    
+#'param <- list(objective = "binary:logistic", max_depth = sample(4:8, 1),eta = runif(1, .01, .3),gamma = runif(1, 0.0, 1), 
+#'              subsample = 0.5, # much smaller for large N
+#'              colsample_bytree = runif(1, .5, .8)
+#'              min_child_weight = sample(1:40, 1),
+#'              max_delta_step = sample(1:10, 1)  # for very imbalanced case)
+#'              
+#' mcv <- wxgboost(data = Mydata,
+#'               y = y, col.x = 1:50,
 #'               cluster = "cluster", strata = "strata", weights = "weights",
+#'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
 #'               method = "dCV", k=10, R=20)
 #'
 #' # Or equivalently:
 #' mydesign <- survey::svydesign(ids=~cluster, strata = ~strata, weights = ~weights,
-#'                               nest = TRUE, data = simdata_lasso_binomial)
-#' mcv <- wlasso(col.y = "y", col.x = 1:50, design = mydesign,
-#'               family = "binomial",
+#'                               nest = TRUE, data = Mydata)
+#' mcv <- wxgboost(y = y, col.x = 1:50, design = mydesign,
+#'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
 #'               method = "dCV", k=10, R=20)
 
 
@@ -234,7 +244,7 @@ for (r in 1:R){
 
   if(print.rw == TRUE){result$data.rw <- newdata}
 
-  class(result) <- "wxgboost"
+  class(result) <- "w.xgboost"
 
   return(result)
 
