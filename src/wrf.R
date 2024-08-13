@@ -26,20 +26,19 @@
 #' @importFrom graphics abline mtext
 #' @importFrom stats as.formula coef predict runif
 #'
-#' @seealso [randomForest::randomForest()] for detailed arguments' explanation.
+#' @seealso [randomForest::randomForest()] for arguments and return values in detail.
 #'
 #' @return The output object of the function \code{wRandomforest()} is an object of class \code{w.randomforest}. This object is a list containing 4 or 5 elements, depending on the value set to the argument \code{print.rw}. Below we describe the contents of these elements:
-#' - `mtry`: A list containing information of two elements:
-#'   - `all`: A numeric vector indicating all the values considered for the tuning parameter.
-#'   - `optimal.mtry`: A numeric value indicating the value of the tuning parameter that minimizes the average error (i.e., selected optimal tuning parameter).
+#' - `mtry`: A list containing information on `mtry` as a tuning parameter (the number of predictors sampled for spliting at each node):
+#'   - `all`: A numeric vector of `k*R` `mtry`- values, i.e. `mtry` for each fold per replicate.
+#'   - `optimal.mtry`: An optimal tuning parameter, `mtry` among \code{mtry$all} that minimizes the average error.
 #' - `evaluation_log`: A list containing information of two elements:
-#'   - `weighted.test.error`: A numeric vector indicating the average error corresponding to each tuning parameter.
-#'   - `min.weighted.test.error`: A numeric matrix indicating the error of each test set for each tuning parameter.
-#' - `model`: A list containing information on the fitted model: An object of class \code{randomForest} found in R-\code{randomForest}. 
-#'           Note that the selected model is fitted by the whole data set (and not uniquely the training sets).
-#'   
+#'   - `weighted.test.error`: A vector of the average errors corresponding tuning parameters in \code{mtry$all}.
+#'   - `min.weighted.test.error`: An minimum error for the optimal tuning parameter from \code{mtry$optimal.mtry} to select the final model.
+#' - `model`: A list containing information on the fitted model: An object of class \code{randomForest} by \code{randomForest::randomForest()}. 
+#'           Note that the selected model is fitted by the whole data set (and not uniquely the training sets). 
 #' - `data.rw`: A data frame containing the original data set and the replicate weights added to define training and test sets. Only included in the output object if \code{print.rw=TRUE}.
-#' - `call`: an object containing the information about the way in which the function has been run.
+#' - `call`: The call that executes this function producing the object of \code{w.randomforest}.
 #' @export
 #'
 #' @examples
@@ -47,7 +46,8 @@
 #' options(survey.adjust.domain.lonely=TRUE)
 #' options(survey.lonely.psu="adjust")
 #'  
-#'  # for classification: y should be a factor.
+#'  # Do not run!!
+#'  # For classification: y should be a factor.
 #' dcv.rf <- wRandomForest(data = Mydata,
 #'               y = as.factor(y), col.x = 1:50,xtest=tdata[,1:50],ytest=tdata$y,
 #'               cluster = "cluster", strata = "strata", weights = "weights",

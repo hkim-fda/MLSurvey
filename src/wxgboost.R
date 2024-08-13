@@ -29,20 +29,22 @@
 #' @importFrom graphics abline mtext
 #' @importFrom stats as.formula coef predict runif
 #' 
-#' @seealso [xgboost::xgb.train()] for relevant arguments. 
+#' @seealso [xgboost::xgb.train()] for relevant arguments and return values in detail. 
+#'
 #'
 #' @return The output object of the function \code{wxgboost()} is an object of class \code{w.xgboost}. This object is a list containing 4 or 5 elements, depending on the value set to the argument \code{print.rw}. Below we describe the contents of these elements:
-#' - `CV.iterations`: A list containing information of three elements:
-#'   - `niter.range.per.R`: A numeric vector indicating all the values considered for the tuning parameter.
-#'   - `k_fold.best`: A numeric value indicating the value of the tuning parameter that minimizes the average error (i.e., selected optimal tuning parameter).
-#'   - `best_iteration`: 
+#' - `CV.iterations`: A list containing information on tuning parameters, `nrounds` of three elements:
+#'   - `niter.range.per.R`: A matrix of the range of iterations of `k`-fold CV by replicate weights for `R` replicates
+#'   - `k_fold.best`: A matrix of best iterations, minimizing the average error, for corresponding folds for `R` replicates.
+#'   - `best_iteration`: An optimal `nround` that minimizes mean test error.
 #' - `CV.eval_log`: A list containing information of two elements:
-#'   - `CV`: A numeric vector indicating the average error corresponding to each tuning parameter.
-#'   - `Best_iteration`: A numeric matrix indicating the error of each test set for each tuning parameter.
-#' - `final.model`: A list containing information on the fitted models: an object of class \code{xgb.Booster} found in R-\code{xgboost} library. Note that the selected model is fitted by the whole data set (and not uniquely the training sets).
-#' - `predicted`: A vector of numeric predicted values from `final.model`.
+#'   - `CV`: A matrix of iteration-wise mean and sd for training and test sets, respectively.
+#'   - `Best_iteration`: A vector of minimum \code{CV.eval_log$CV} to pick up the final model corresponding to \code{CV.iteratons$best_iteration}.
+#' - `final.model`: A list containing information on the fitted models: an object of class \code{xgboost::xgb.Booster}. 
+#'                  Note that the selected model is fitted by the whole data set (and not uniquely the training sets).
+#' - `predicted`: A vector of predicted values from `final.model`.
 #' - `data.rw`: A data frame containing the original data set and the replicate weights added to define training and test sets. Only included in the output object if \code{print.rw=TRUE}.
-#' - `call`: an object containing the information about the way in which the function has been run.
+#' - `call`:The call that executes this function producing the object of \code{w.xgboost}.
 #' @export
 #'
 #' @examples
@@ -57,19 +59,65 @@
 #'              min_child_weight = sample(1:40, 1),
 #'              max_delta_step = sample(1:10, 1)  # for very imbalanced case)
 #'              
-#' mcv <- wxgboost(data = Mydata,
+#' xgb.cv <- wxgboost(data = Mydata,
 #'               y = y, col.x = 1:50,
 #'               cluster = "cluster", strata = "strata", weights = "weights",
 #'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
 #'               method = "dCV", k=10, R=20)
 #'
 #' # Or equivalently:
-#' mydesign <- survey::svydesign(ids=~cluster, strata = ~strata, weights = ~weights,
+#' Mydesign <- survey::svydesign(ids=~cluster, strata = ~strata, weights = ~weights,
 #'                               nest = TRUE, data = Mydata)
-#' mcv <- wxgboost(y = y, col.x = 1:50, design = mydesign,
+#' xgb.cv <- wxgboost(y = y, col.x = 1:50, design = Mydesign,
 #'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
 #'               method = "dCV", k=10, R=20)
-
+#'
+#'
+#' #For extensive cross validation for selecting optimal parameters
+#'   ## set up candidate parameters to be selected in cross validation
+#'  param <- list(objective = "binary:logistic",
+#'                  max_depth = sample(4:8, 1),
+#'                   eta = runif(1, .01, .3),
+#'                   gamma = runif(1, 0.0, 1), 
+#'                   subsample = 0.5, # much smaller for large N
+#'                   colsample_bytree = runif(1, .5, .8)
+#'                   min_child_weight = sample(1:40, 1),
+#'                   max_delta_step = sample(1:10, 1) ) # for very imbalanced case 
+#' 
+#'   ## write your own function to implement       
+#'  optim.wxgb.para<-function(data,y,col.x,param,nitr,nfolds,R,nRounds,nstop){
+#'                  for (iter in 1:nitr) {
+#'                     seed.number = sample.int(10000,1)
+#'                     set.seed(seed.number)
+#'                     wxgb<-wxgboost(data=data,y=y,col.x=col.x,cluster = "clusters",strata = "strata",weights = "weights",method = "dCV",
+#'                     k=nfolds,R=R,params = param,nrounds = nRounds,maximize = FALSE,early_stopping_rounds = nstop,verbose = 0,final.model=FALSE)
+#'
+#'                     min_weight.error = min(wxgb$CV.eval_log$CV$mean.test.error)
+#'                     best_eval = 100
+#'                     if (min_weight.error < best_eval) {
+#'                              best_eval = min_weight.error
+#'                              best_iter_num = wxgb$CV.iterations$best_iteration # having the best evaluation metric value
+#'                              best_seednumber = seed.number
+#'                              best_param = param
+#'             }
+#'         }
+#'
+#'    return(list(nrounds=best_iter_num,snumber=best_seednumber,params = best_param))
+#'  }
+#'  
+#'  ## search for optimal parameters
+#'  opt.par<- optim.wxgb.para(Mydata,Mydata$y,2:61,param,100,5,10,10000,8)
+#'  
+#'  ## fitting the optimal model
+#'  set.seed(opt.par$snumber)
+#'  
+#'  ### The data needs to be a sparse matrix without intercept.
+#'  Mat<- sparse.model.matrix(y~. ,data = MyData_unweighted)[,-1] #dropping intercept
+#'  wtData <- xgb.DMatrix(data = Mat,label=Mydata$y,weight=Mydata$weights)
+#'  
+#'  dcv_xgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,feval = evalerror.bin)
+#'
+#'  
 
 wxgboost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA, nthread=NULL,
                    cluster = NULL, strata = NULL, weights = NULL, design = NULL,

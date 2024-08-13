@@ -1,6 +1,7 @@
 #' CI for weighted AUC by replicate weights
 #'
-#' @describeIn The function estimates confidence interval (CI) for weighted AUC (wAUC) by replicate weights from \code{survey::as.svrepdesign()}; \code{bootstrap} is Canty and Davison’s bootstrap, 
+#' @description
+#'  The function estimates confidence interval (CI) for weighted AUC (wAUC) by replicate weights from \code{survey::as.svrepdesign()}; \code{bootstrap} is Canty and Davison’s bootstrap, 
 #'             \code{subbootstrap} is Rao and Wu’s (n − 1) bootstrap, \code{JK1} and \code{JKn} are jackknife methods.
 #'             
 #'
