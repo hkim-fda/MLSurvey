@@ -20,16 +20,16 @@
 #'
 #' @details
 #' Some of these methods (specifically \code{JKn}, \code{bootstrap}, \code{subbootstrap} and \code{BRR}),
-#' were previously implemented in the \code{survey} R-package, to which we can access by means of the function
+#' were previously implemented in the \code{survey} R-package, from which we can access the function
 #' \code{as.svrepdesign()} (the names of the methods are kept as in \code{as.svrepdesign()}).
 #' Thus, the function \code{replicate.weights()} depends on this function to define replicate weights based on these
 #' options. In contrast, \code{dCV}, \code{split} and \code{extrapolation} have been expressly defined to be
 #' incorporated into this function.
 #'
 #' Selecting any of the above-mentioned methods, the object returned by this function is a new data frame,
-#' which includes new columns into the original data set, each of them indicating replicate
+#' in which new columns are added to the original data set, each of which indicates replicate
 #' weights for different training (always) and test (optionally, controlled by the argument \code{rw.test}) subsets.
-#' The number of new columns and the way in which they are denoted depend on the values set for the arguments,
+#' The number of new columns and how to be denoted depend on the values set for the arguments,
 #' in general, and on the replicate weights method selected, in particular. The new columns indicating training and test sets
 #' follow a similar structure for any of the selected methods. Specifically, the structure of the names of the training sets
 #' is the following: \code{rw_r_x_train_t} where \code{x=1,...,R} indicates the \code{x}-th partition of the sample and

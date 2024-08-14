@@ -3,7 +3,7 @@
 #'@description This function fits Elastic Net prediction (linear or logistic) models to complex survey data, using sampling weights in the estimation process 
 #'            and selects the lambda that minimizes the error based on different replicating weights methods.
 #'
-#' @param data A data frame with information about the response variable and covariates, as well as sampling weights and strata and cluster indicators. It could be \code{NULL} if the sampling design were replaced in the \code{design} argument.
+#' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were replaced in the \code{design} argument.
 #' @param col.y A numeric value indicating the index of the response variable or a string of the response variable name .
 #' @param col.x A numeric vector indicating indices of covariates or a vector of strings indicating these column names.
 #' @param cluster A character string indicating the name of the column with cluster identifiers. It could be \code{NULL} if the sampling design were indicated in the \code{design} argument.
