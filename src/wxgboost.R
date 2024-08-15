@@ -73,9 +73,6 @@
 #'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
 #'               method = "dCV", k=10, R=20)
 #'
-#'  
-#' 
-#'  
 wxgboost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA, nthread=NULL,
                    cluster = NULL, strata = NULL, weights = NULL, design = NULL,
                    params = list(), nrounds, verbose = 1, print_every_n = 1L,

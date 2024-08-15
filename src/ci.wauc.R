@@ -56,7 +56,7 @@ options(survey.lonely.psu='remove')
 #                    type=c("JK1","JKn", "bootstrap", "subbootstrap","mrbbootstrap", "BRR"),B=2000,conf.level=0.95, 
 #                    fpc=NULL,fpctype=NULL,..., compress=TRUE,
 #                    mse=getOption("survey.replicates.mse"))
-  ci.wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,cluster=NULL,strata=NULL,design=NULL,data=NULL,
+ci.wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,cluster=NULL,strata=NULL,design=NULL,data=NULL,
                      type=c("JK1","JKn", "bootstrap", "subbootstrap"),B=2000,conf.level=0.95, 
                      fpc=NULL,fpctype=NULL,..., compress=TRUE,
                      mse=getOption("survey.replicates.mse")){

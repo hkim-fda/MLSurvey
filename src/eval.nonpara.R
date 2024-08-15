@@ -113,33 +113,7 @@ eval.error <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
 }
 
 
-evalerror.bin<-function(preds,dtrain){ 
-  labels<-getinfo(dtrain,"label") 
-  weights <- getinfo(dtrain,"weight")
-  err <- stats::weighted.mean(labels!=(preds>0),weights,na.rm=TRUE)
-  
-  return(list(metric="weighted.error", value=err)) }
 
-eval.loss<- function(preds,dtrain){
-  labels<-getinfo(dtrain,"label") 
-  weights <- getinfo(dtrain,"weight")
-  preds <- 1/(1+exp(-preds))
-  loss<- Loss(preds,labels,"binary:logistic")
-  wloss <- stats::weighted.mean(loss,weights,na.rm=TRUE)
-  # wloss<- sum(loss*weights)/sum(weights)
-  return(list(metric="weighted.mean.logloss",value=wloss))
-
-
-}  
-
-evalerror.reg <- function(preds,dtrain){
-    labels <- getinfo(dtrain,"label")
-    weights<- getinfo(dtrain,"weight")
-    err<- stats::weighted.mean((labels-preds)^2,weights,na.rm=TRUE)
-
-    return(list(metric="weighted.mse", value=err))
-
-}
 
 Error <- function(y.est,y,objective = c("reg:squarederror","binary:logistic")){
 
@@ -155,22 +129,4 @@ Error <- function(y.est,y,objective = c("reg:squarederror","binary:logistic")){
    return(l)
 }
 
-Loss <- function(y.est, y, objective = c("reg:squarederror","binary:logistic")){
-
-  if(objective == "reg:squarederror"){
-    l <- (y.est - y)^2
-  }
-
-  if(objective == "binary:logistic"){
-      
-      
-    l <- rep(NA, length(y))
-    l[which(y==1)] <- -log(y.est[which(y==1)])
-    l[which(y==0)] <- -log(1-y.est[which(y==0)])
-    
-  }
-
-  return(l)
-
-}
 
