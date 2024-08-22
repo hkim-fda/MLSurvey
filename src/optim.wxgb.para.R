@@ -60,12 +60,23 @@ optim.wxgb.para<-function(y,col.x,param=list(),data=NULL, nitr=100,nfolds=10,R=1
                           missing = NA, nthread=NULL,maximize=FALSE,cluster = NULL, strata = NULL, weights = NULL, 
                           design = NULL,print_every_n=50L,...){
   
+  # Step 0: Notation
+  if(!is.null(design)){
+    cluster <- as.character(design$call$id[2])
+    if(cluster == "1" || cluster == "0"){
+      cluster <- NULL
+    }
+    strata <- as.character(design$call$strata[2])
+    weights <- as.character(design$call$weights[2])
+    data <- get(design$call$data)
+  }
+  
   
                  for (iter in 1:nitr) {
                     seed.number = sample.int(10000,1)
                     set.seed(seed.number)
                     wxgb<-wxgboost(data = data, y =y, col.x = col.x,missing = missing, nthread=nthread,
-                                   cluster = cluster, strata = strata, weights = NULL, design = NULL,
+                                   cluster = cluster, strata = strata, weights = weights, 
                                    params = param, nrounds=nRounds, verbose = 0, print_every_n = print_every_n,
                                    early_stopping_rounds = nstop, final.model=FALSE,
                                    method = "dCV",maximize=maximize,

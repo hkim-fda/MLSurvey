@@ -189,7 +189,7 @@ welnet <- function(data = NULL, col.y = NULL, col.x = NULL,
                           weights = data[,weights],
                           lambda = lambda.min, alpha = alpha,
                           family = family)
-
+  
   result <- list()
   result$lambda <- list(grid = lambda.grid,
                         min = lambda.min)          

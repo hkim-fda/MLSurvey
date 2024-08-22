@@ -99,7 +99,7 @@ ci.wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,clust
   }
   # Generate replicate weights based on the selected method
   
-    if(type %in% c("bootstrap", "subbootstrap","mrbbootstrap")){
+    if(type %in% c("bootstrap", "subbootstrap")){
       rep.des <- survey::as.svrepdesign(design = design, type = type, replicates = B)
     } else {
       rep.des <- survey::as.svrepdesign(design = design, type = type)
