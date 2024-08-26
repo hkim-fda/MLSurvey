@@ -88,7 +88,7 @@ ci.wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,clust
     } else{
       strata <- as.character(design$call$strata[2])
     }
-    if(is.null(design$call$weights) || unique(design$allprob)==1){
+    if(is.null(design$call$weights) || sum(unique(design$allprob))==1){
       weights <- NULL
     } else{
       weights <- as.character(design$call$weights[2])
