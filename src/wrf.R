@@ -23,7 +23,7 @@
 #' @param method.split A character string indicating the way in which replicate weights should be defined in the \code{split} method. Choose one of the following: \code{dCV}, \code{bootstrap} or \code{subbootstrap}. Only applies for \code{split} method.
 #' @param print.rw A logical value. If \code{TRUE}, the data set with the replicate weights is saved in the output object. Default \code{print.rw=FALSE}.
 #' @param ... optional parameters to be passed to the low level function \code{randomForest.default} in R-\code{randomForest}.
-#' @importFrom graphics abline mtext
+#' 
 #' @importFrom stats as.formula coef predict runif
 #'
 #' @seealso [randomForest::randomForest()] for arguments and return values in detail.
@@ -39,7 +39,7 @@
 #'           Note that the selected model is fitted by the whole data set (and not uniquely the training sets). 
 #' - `data.rw`: A data frame containing the original data set and the replicate weights added to define training and test sets. Only included in the output object if \code{print.rw=TRUE}.
 #' - `call`: The call that executes this function producing the object of \code{w.randomforest}.
-#' @export
+#'
 #'
 #' @examples
 #' #to avoid only one PSU in a stratum
@@ -59,8 +59,8 @@
 #' dcv.rf <- wRandomForest(y = as.factor(y), col.x = 1:50, design = mydesign,xtest=tdata[,1:50],ytest=tdata$y,
 #'                         importance=TRUE,proximity = TRUE,
 #'                         method = "dCV", k=5, R=5)
-
-
+#'                         
+#' @export                       
 wRandomforest <- function(data = NULL, col.x = NULL, y = NULL, xtest=NULL,ytest=NULL,
                    cluster = NULL, strata = NULL, weights = NULL, design = NULL, 
                    method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),

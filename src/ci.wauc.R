@@ -32,7 +32,6 @@
 #' 
 #' @return confidence interval (CI) estimates
 #' 
-#' @export
 #' 
 #' @examples
 #' 
@@ -46,7 +45,7 @@
 #'                              
 #' AUC.ci<- ci.wauc(Mydata$y,Mydata$yhat,design = Mydesign,type = "subbootstrap",B=2000)
 #' 
-#' 
+#' @export
 # library(wROC)
 # library(survey)
 options(survey.lonely.psu='remove')

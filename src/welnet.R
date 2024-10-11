@@ -45,7 +45,7 @@
 #'            (i.e., the optimal tuning parameter selected among the elements in \code{lambda$grid}).  @seealso [glmnet::glmnet()] for detailed information on return values.    
 #' - `data.rw`: A data frame containing the original data set and the replicate weights added to define training and test sets. Only included in the output object if \code{print.rw=TRUE}.
 #' - `call`: The call that executes this function producing the object of \code{w.elnet}.
-#' @export
+#'
 #' 
 #' 
 #'
@@ -65,7 +65,8 @@
 #' en.dcv <- welnet(col.y = "y", col.x = 1:50, design = Mydesign,
 #'               family = "binomial", alpha = alpha[10],
 #'               method = "dCV", k=10, R=20)
-
+#'               
+#'@export
 # source("error.f.R")
 welnet <- function(data = NULL, col.y = NULL, col.x = NULL,
                    cluster = NULL, strata = NULL, weights = NULL, design = NULL,

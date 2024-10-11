@@ -27,7 +27,7 @@
 #' - `nrounds` : The best iteration number having the best evaluation metric value
 #' - `snumber` : A seed number for \code{set.seed()} yielding the optimal (hyper-)parameters.
 #' - `params`  : A list of optimal (hyper-) parameters selected among `nitr` models implemented by `wxgboost()` with `dCV` on every iteration.  
-#' @export
+#'
 #' 
 #' @examples
 #' # Do not run!!
@@ -55,7 +55,7 @@
 #'  
 #'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,feval = evalerror.bin)
 #'
-#'   
+#' @export
 optim.wxgb.para<-function(y,col.x,param=list(),data=NULL, nitr=100,nfolds=10,R=1,nRounds=10000,nstop=5,
                           missing = NA, nthread=NULL,maximize=FALSE,cluster = NULL, strata = NULL, weights = NULL, 
                           design = NULL,print_every_n=50L,...){

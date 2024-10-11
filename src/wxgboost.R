@@ -27,7 +27,6 @@
 #' @param method.split A character string indicating the way in which replicate weights should be defined in the \code{split} method. Choose one of the following: \code{dCV}, \code{bootstrap} or \code{subbootstrap}. Only applies for \code{split} method.
 #' @param print.rw A logical value. If \code{TRUE}, the data set with the replicate weights is saved in the output object. Default \code{print.rw=FALSE}.
 #'
-#' @importFrom graphics abline mtext
 #' @importFrom stats as.formula coef predict runif
 #' 
 #' @seealso [xgboost::xgb.train()] for relevant arguments and return values in detail. 
@@ -46,7 +45,7 @@
 #' - `predicted`: A vector of predicted values from `final.model`.
 #' - `data.rw`: A data frame containing the original data set and the replicate weights added to define training and test sets. Only included in the output object if \code{print.rw=TRUE}.
 #' - `call`:The call that executes this function producing the object of \code{w.xgboost}.
-#' @export
+#' 
 #'
 #' @examples
 #'  Do not run!!
@@ -72,7 +71,7 @@
 #' xgb.cv <- wxgboost(y = y, col.x = 1:50, design = Mydesign,
 #'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
 #'               method = "dCV", k=10, R=20)
-#'
+#'@export
 wxgboost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA, nthread=NULL,
                    cluster = NULL, strata = NULL, weights = NULL, design = NULL,
                    params = list(), nrounds, verbose = 1, print_every_n = 1L,

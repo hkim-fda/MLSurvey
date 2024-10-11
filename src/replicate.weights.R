@@ -39,14 +39,10 @@
 #' in the data set has been included in each partition. This information is included as \code{fold_t} or \code{set_t},
 #' depending on the method. See more detailed information below.
 #'
-#' @author Amaia Iparragirre
 #' @references \url{https://github.com/aiparragirre/wlasso}
 #' 
 #' 
-#' 
-#' @export
-#'
-#' @examples
+#'  @examples
 #' data(simdata_lasso_binomial)
 #'
 #' # JKn ---------------------------------------------------------------------
@@ -103,6 +99,7 @@
 #'                             train.prob = 0.5,
 #'                             rw.test = TRUE)
 #'
+#' @export
 replicate.weights <- function(data,
                               method = c("JKn", "dCV", "bootstrap", "subbootstrap",
                                          "BRR", "split", "extrapolation"),

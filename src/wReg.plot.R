@@ -6,8 +6,9 @@
 #' @param x an object of class "wlasso" or "w.elnet".  This is an extension of \code{wlasso::wlasso.plot()} 
 #'
 #' @return a graph
-#' @export
-#'
+#' 
+#' @importFrom graphics abline mtext
+#' 
 #' @examples
 #' # For weighted LASSO by either wlasso or welnet function,
 #' wlas <- wlasso(data = Mydata, col.y = "y", col.x = 1:50,
@@ -25,6 +26,7 @@
 #'               weights = "weights", method = "dCV", k=10, R=20)
 #' wReg.plot(wen)    
 #'            
+#' @export            
 wReg.plot <- function(x){
   
   if(inherits(x, "w.elnet")){DF=x$model$final_model$df}
