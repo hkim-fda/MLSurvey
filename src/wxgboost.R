@@ -1,10 +1,10 @@
-#' Weighted Xgboost prediction models for complex survey data
+#' Weighted XGBoost (wXGBoost) prediction models for complex survey data
 #'
-#'@description This function fits Xgboost prediction (linear or logistic) models to complex survey data, using sampling weights in the estimation process and 
-#'             selects the tuning parameters that minimize the error based on different replicating weights methods.  Detailed arguments refer to R-\code{xgboost}.
+#'@description The function fits XGBoost prediction (linear or logistic) models for complex survey data, using sampling weights in the estimation process and 
+#'             selects the tuning parameters minimizing the error based on different replicating weights methods.  Detailed arguments refer to R-\code{xgboost}.
 #'
 #' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were added to the \code{design} argument.
-#' @param y A numeric vector of response variable. 
+#' @param y A vector of response variable. 
 #' @param col.x A numeric vector indicating indices of the covariates or a string vector indicating these column names.
 #' @param cluster A character string indicating the name of cluster identifiers. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
 #' @param strata A character string indicating the name of strata identifiers. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
@@ -27,7 +27,6 @@
 #' @param method.split A character string indicating the way in which replicate weights should be defined in the \code{split} method. Choose one of the following: \code{dCV}, \code{bootstrap} or \code{subbootstrap}. Only applies for \code{split} method.
 #' @param print.rw A logical value. If \code{TRUE}, the data set with the replicate weights is saved in the output object. Default \code{print.rw=FALSE}.
 #'
-#' @importFrom stats as.formula coef predict runif
 #' 
 #' @seealso [xgboost::xgb.train()] for relevant arguments and return values in detail. 
 #'
@@ -53,22 +52,23 @@
 #'    options(survey.adjust.domain.lonely=TRUE)
 #'    options(survey.lonely.psu="adjust")
 #'    
+#'data(nhanes2013_sbc)    
 #'param <- list(objective = "binary:logistic", max_depth = sample(4:8, 1),eta = runif(1, .01, .3),gamma = runif(1, 0.0, 1), 
 #'              subsample = 0.5, # much smaller for large N
 #'              colsample_bytree = runif(1, .5, .8)
 #'              min_child_weight = sample(1:40, 1),
 #'              max_delta_step = sample(1:10, 1)  # for very imbalanced case)
 #'              
-#' xgb.cv <- wxgboost(data = Mydata,
-#'               y = y, col.x = 1:50,
-#'               cluster = "cluster", strata = "strata", weights = "weights",
+#' xgb.cv <- wxgboost(data = nhanes2013_sbc,
+#'               y = nhanes2013_sbc$HBP , col.x = 2:61,
+#'               cluster = "SDMVPSU", strata = "SDMVSTRA", weights = "WTSAF2YR",
 #'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
 #'               method = "dCV", k=10, R=20)
 #'
 #' # Or equivalently:
-#' Mydesign <- survey::svydesign(ids=~cluster, strata = ~strata, weights = ~weights,
-#'                               nest = TRUE, data = Mydata)
-#' xgb.cv <- wxgboost(y = y, col.x = 1:50, design = Mydesign,
+#' des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
+#'                               nest = TRUE, data = nhanes2013_sbc)
+#' xgb.cv <- wxgboost(y = nhanes2013_sbc$HBP, col.x = 2:61, design = des,
 #'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
 #'               method = "dCV", k=10, R=20)
 #'@export

@@ -1,19 +1,17 @@
-#' Plot weighted Elastic Net/LASSO object
+#' Plot weighted Elastic Net (wEN)/LASSO object
 #' 
 #' @description
-#' This plot function generates a graph of the optimal number of variables selected in the final model.
+#' A plot function generating a graph of the optimal number of variables selected in the final model.
 #' 
-#' @param x an object of class "wlasso" or "w.elnet".  This is an extension of \code{wlasso::wlasso.plot()} 
+#' @param x an object of class "wlasso" or "w.elnet".  This is extended from \code{wlasso::wlasso.plot()} 
 #'
 #' @return a graph
 #' 
-#' @importFrom graphics abline mtext
-#' 
 #' @examples
 #' # For weighted LASSO by either wlasso or welnet function,
-#' wlas <- wlasso(data = Mydata, col.y = "y", col.x = 1:50,
-#'               family = "binomial", cluster = "cluster", strata = "strata",
-#'               weights = "weights", method = "dCV", k=10, R=20)
+#' wlas <- wlasso::wlasso(data = nhanes2013_sbc, col.y = "HBP", col.x = 2:61,
+#'               family = "binomial", cluster = "SDMVPSU", strata = "SDMVSTRA",
+#'               weights = "WTSAF2YR", method = "dCV", k=10, R=20)
 #' wlasso.plot(wlas)
 #' 
 #'  # Equivalently,
@@ -21,9 +19,9 @@
 #' wReg.plot(wlas)
 #' 
 #' # Or equivalently, with weighted Elastic Net,
-#' wen <- welnet(data = Mydata, col.y = "y", col.x = 1:50,alpha =1,
-#'               family = "binomial", cluster = "cluster", strata = "strata",
-#'               weights = "weights", method = "dCV", k=10, R=20)
+#' wen <- welnet(data = nhanes2013_sbc, col.y = "HBP", col.x = 2:61,alpha =1,
+#'               family = "binomial", cluster = "SDMVPSU", strata = "SDMVSTRA",
+#'               weights = "WTSAF2YR", method = "dCV", k=10, R=20)
 #' wReg.plot(wen)    
 #'            
 #' @export            

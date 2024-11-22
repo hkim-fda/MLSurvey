@@ -1,7 +1,8 @@
 #' Weighted mean error of binary outcome for complex survey data
 #'
 #' @description
-#' A function to evaluate XGBoost models by weighted mean error for binary outcome (`0/1`).  This function is a customized error function 
+#' A function to evaluate XGBoost models by weighted mean error for binary outcome (`0/1`).  This function is a customized error function to 
+#' plug in the function \code{wxgboost()}.
 #' for complex survey data.
 #' 
 #' @param preds Predicted binary values (`0/1`) from the model.
@@ -12,12 +13,9 @@
 #' 
 #' @seealso [xgboost::xgb.train()] for relevant arguments and return values in detail. 
 #' @seealso [wxgboost()] for detailed information on implementation.
+#' @seealso [optim.wxgb.para()] for detailed optimization and examples.
 #' 
-#' @examples
-#' # Do not run!!
-#'  Mat<- sparse.model.matrix(y~. ,data = MyData_unweighted)[,-1] #dropping intercept
-#'  wtData <- xgb.DMatrix(data = Mat,label=Mydata$y,weight=Mydata$weights) 
-#'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,feval = evalerror.bin)
+#
 #'
 #'@export
 evalerror.bin<-function(preds,dtrain){ 
@@ -42,12 +40,9 @@ evalerror.bin<-function(preds,dtrain){
 #' - `value` : A numeric value of weighted mean of log loss.
 #' @seealso [xgboost::xgb.train()] for relevant arguments and return values in detail. 
 #' @seealso [wxgboost()] for detailed information on implementation.
-#' 
-#' @examples
-#' # Do not run!!
-#'  Mat<- sparse.model.matrix(y~. ,data = MyData_unweighted)[,-1] #dropping intercept
-#'  wtData <- xgb.DMatrix(data = Mat,label=Mydata$y,weight=Mydata$weights) 
-#'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,feval = eval.loss)
+#' @seealso [optim.wxgb.para()] for detailed optimization and examples.
+#'
+#'
 #' @export
 eval.loss<- function(preds,dtrain){
   labels<-getinfo(dtrain,"label") 
@@ -73,12 +68,9 @@ eval.loss<- function(preds,dtrain){
 #' - `value` : A numeric value of weighted mean squared error (MSE).
 #' @seealso [xgboost::xgb.train()] for relevant arguments and return values in detail. 
 #' @seealso [wxgboost()] for detailed information on implementation.
+#' @seealso [optim.wxgb.para()] for detailed optimization and examples.
 #' 
-#' @examples
-#' # Do not run!!
-#'  Mat<- sparse.model.matrix(y~. ,data = MyData_unweighted)[,-1] #dropping intercept
-#'  wtData <- xgb.DMatrix(data = Mat,label=Mydata$y,weight=Mydata$weights) 
-#'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,feval = evalerror.reg)
+#'
 #'
 #' @export
 evalerror.reg <- function(preds,dtrain){

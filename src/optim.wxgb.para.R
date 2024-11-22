@@ -1,7 +1,7 @@
-#' Optimal (hyper-) parameter search for weighted XGBoost (wxgboost) for complex survey data
+#' Optimal (hyper-) parameter search for weighted XGBoost (wXGBoost) for complex survey data
 #'
 #' @description
-#' A function to search for optimal (hyper-) parameters by design-based K-fold cross validation \code{dCV} for XGBoost models.
+#' A function searching for optimal (hyper-) parameters by replicate weights for CV for XGBoost models.
 #'
 #' @param y A numeric vector of response variable.
 #' @param col.x A numeric vector indicating indices of the covariates or a string vector indicating these column names.
@@ -12,6 +12,7 @@
 #' @param nfolds The number of folds to be defined for \code{dCV} method. Default is \code{k=10}.
 #' @param R The number of times the sample is partitioned for the \code{dCV} method. Default is \code{R=1}.
 #' @param nRounds The maximum number of boosting iterations.
+#' @param method A character string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}. 
 #' @param nstop \code{NULL} does not trigger the early stopping function. Setting to an integer k will stop training with a validation set unless the performance improve for k rounds.  Setting this parameter engages the `cb.early.stop` callback.
 #' @param maximize \code{nstop} is set, then this parameter must be set as well. When it is TRUE, it means the larger the evaluation score the better. This parameter is passed to the cb.early.stop callback.
 #' @param cluster A character string indicating the name of cluster identifiers. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
@@ -21,7 +22,7 @@
 #' @param print_every_n Print each n-th iteration evaluation messages when verbose>0. Default is `50L` printing every 50th iteration message. This parameter is passed to the `cb.print.evaluation` callback.
 #' 
 #' @seealso [xgboost::xgb.train()] for relevant arguments and return values in detail. 
-#' @seealso [wxgboost()] for detailed information on implementation.
+#' @seealso [wxgboost()], [replicate.weights()] for detailed information on implementation.
 #' 
 #' @return   A list of return values for optimal (hyper-)parameters as follows:
 #' - `nrounds` : The best iteration number having the best evaluation metric value
@@ -42,23 +43,27 @@
 #'                   max_delta_step = sample(1:10, 1) ) # for very imbalanced case 
 #' 
 #'   ## search for optimal parameters
-#'  Mydesign <- survey::svydesign(ids=~cluster, strata = ~strata, weights = ~weights,
-#'                               nest = TRUE, data = Mydata)
-#'  opt.par<- optim.wxgb.para(Mydata$y,2:61,param,Mydata,100,5,10,10000,8,design=Mydesign,print_every_n=250L)
+#'  load("nhanes2013_sbc.rda")
+#'  Mydesign <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
+#'                               nest = TRUE, data = nhanes2013_sbc)
+#'  opt.par<- optim.wxgb.para(nhanes2013_sbc$HBP,2:61,param,100,5,10,10000,8,design=Mydesign,print_every_n=250L)
 #'  
 #'  ## fitting the optimal model
 #'  set.seed(opt.par$snumber)
 #'  
 #'  ### The data needs to be a sparse matrix without intercept.
-#'  Mat<- sparse.model.matrix(y~. ,data = MyData_unweighted)[,-1] #dropping intercept
-#'  wtData <- xgb.DMatrix(data = Mat,label=Mydata$y,weight=Mydata$weights)
-#'  
+#'  ### Generate a sparse matrix from a regular dataset
+#'  unwtData<-nhanes2013_sbc[,-c(62:66)]   #excluding weight related vectors
+#'  Mat<- sparse.model.matrix(HBP~. ,data = unwtdata )[,-1]   #dropping intercept
+#'  wtData <- xgb.DMatrix(data = nhanes2013_sbc,label=nhanes2013_sbc$HBP,weight=nhanes2013_sbc$WTSAF2YR) 
+#'
 #'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,feval = evalerror.bin)
 #'
 #' @export
-optim.wxgb.para<-function(y,col.x,param=list(),data=NULL, nitr=100,nfolds=10,R=1,nRounds=10000,nstop=5,
+optim.wxgb.para<-function(y,col.x,param=list(),nitr=100,nfolds=10,R=1,nRounds=10000,nstop=5,
+                          method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),
                           missing = NA, nthread=NULL,maximize=FALSE,cluster = NULL, strata = NULL, weights = NULL, 
-                          design = NULL,print_every_n=50L,...){
+                          design = NULL,data=NULL,print_every_n=50L,...){
   
   # Step 0: Notation
   if(!is.null(design)){
@@ -79,7 +84,7 @@ optim.wxgb.para<-function(y,col.x,param=list(),data=NULL, nitr=100,nfolds=10,R=1
                                    cluster = cluster, strata = strata, weights = weights, 
                                    params = param, nrounds=nRounds, verbose = 0, print_every_n = print_every_n,
                                    early_stopping_rounds = nstop, final.model=FALSE,
-                                   method = "dCV",maximize=maximize,
+                                   method = method,maximize=maximize,
                                    k = nfolds, R = R, dCV.sw.test = FALSE,
                                    print.rw = FALSE, save_period = NULL, save_name = "wxgboost.model",
                                    xgb_model = NULL, callbacks = list(), ...)

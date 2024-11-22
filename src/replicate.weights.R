@@ -1,9 +1,9 @@
 #' Replicate weights
 #'
-#' @description This function calculates replicate weights imported from R-\code{wlasso} library.
+#' @description The function calculates replicate weights imported from R-\code{wlasso} library.
 #'
 #' @param data A data frame with information on (at least) cluster and strata indicators, and sampling weights. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument (see \code{design}).
-#' @param method A character string indicating the method to be applied to define replicate weights. Choose between one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
+#' @param method A character string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
 #' @param cluster A character string indicating the name of the column with cluster identifiers in the data frame indicated in \code{data}. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument (see \code{design}).
 #' @param strata A character string indicating the name of the column with strata identifiers in the data frame indicated in \code{data}. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument (see \code{design}).
 #' @param weights A character string indicating the name of the column with sampling weights in the data frame indicated in \code{data}. It could be \code{NULL} if the sampling design is indicated in the \code{design} argument (see \code{design}).
@@ -16,26 +16,23 @@
 #' @param rw.test A logical value. If \code{TRUE}, the function returns in the output object the replicate weights to the corresponding test sets. If \code{FALSE}, only the replicate weights of the training sets are returned. Default is \code{rw.test = FALSE}.
 #' @param dCV.sw.test A logical value. If \code{TRUE} original sampling weights for the units in the test sets are returned instead of the replicate weights. Default is \code{dCV.sw.test = FALSE}. Only applies for \code{dCV} method.
 #'
-#' @return This function returns a new data frame with new columns, each of them indicating replicate weights for different subsets.
+#' @return The function returns a new data frame with new columns, each of which indicates replicate weights for different subsets.
 #'
 #' @details
 #' Some of these methods (specifically \code{JKn}, \code{bootstrap}, \code{subbootstrap} and \code{BRR}),
 #' were previously implemented in the \code{survey} R-package, from which we can access the function
 #' \code{as.svrepdesign()} (the names of the methods are kept as in \code{as.svrepdesign()}).
-#' Thus, the function \code{replicate.weights()} depends on this function to define replicate weights based on these
-#' options. In contrast, \code{dCV}, \code{split} and \code{extrapolation} have been expressly defined to be
-#' incorporated into this function.
+#' Thus, the function \code{replicate.weights()} defines those replicate weights relying on these options.
+#' In contrast, \code{dCV}, \code{split} and \code{extrapolation} have been expressly defined in this function.
 #'
-#' Selecting any of the above-mentioned methods, the object returned by this function is a new data frame,
-#' in which new columns are added to the original data set, each of which indicates replicate
-#' weights for different training (always) and test (optionally, controlled by the argument \code{rw.test}) subsets.
+#' Selecting any of the above-mentioned methods returns a new data frame,
+#' in which new columns are added to the original data set; each column by replicate
+#' weights creates different pairs of training (always) and test sets (optionally, controlled by the argument \code{rw.test}) subsets.
 #' The number of new columns and how to be denoted depend on the values set for the arguments,
 #' in general, and on the replicate weights method selected, in particular. The new columns indicating training and test sets
-#' follow a similar structure for any of the selected methods. Specifically, the structure of the names of the training sets
-#' is the following: \code{rw_r_x_train_t} where \code{x=1,...,R} indicates the \code{x}-th partition of the sample and
-#' \code{t=1,...,T} the \code{t}-th training set. Similarly, the structure of the new columns indicating the test sets
-#' is the following: \code{rw_r_x_test_t} or \code{sw_r_x_test_t}, where \code{x} indicates the partition and \code{t}
-#' the number of the test set. In addition, for some of the methods we also indicate the fold or set to which each unit
+#' follow a similar structure for any of the selected methods: \code{rw_r_x_train_t}, where \code{x=1,...,R} indicates the \code{x}-th partition of the sample and
+#' \code{t=1,...,T} does the \code{t}-th training set. Similarly, the new columns indicating the test sets 
+#' is structured as follows: \code{rw_r_x_test_t} or \code{sw_r_x_test_t}.  For some of the methods, we also indicate the fold or set for each unit
 #' in the data set has been included in each partition. This information is included as \code{fold_t} or \code{set_t},
 #' depending on the method. See more detailed information below.
 #'
@@ -43,58 +40,58 @@
 #' 
 #' 
 #'  @examples
-#' data(simdata_lasso_binomial)
+#' data(nhanes2013_sbc)
 #'
 #' # JKn ---------------------------------------------------------------------
-#' newdata <- replicate.weights(data = simdata_lasso_binomial,
+#' newdata <- replicate.weights(data = nhanes2013_sbc,
 #'                              method = "JKn",
-#'                              cluster = "cluster",
-#'                              strata = "strata",
-#'                              weights = "weights",
+#'                              cluster = "SDMVPSU",
+#'                              strata = "SDMVSTRA",
+#'                              weights = "WTSAF2YR",
 #'                              rw.test = TRUE)
 #'
 #' # dCV ---------------------------------------------------------------------
-#' newdata <- replicate.weights(data = simdata_lasso_binomial,
+#' newdata <- replicate.weights(data = nhanes2013_sbc,
 #'                              method = "dCV",
-#'                              cluster = "cluster",
-#'                              strata = "strata",
-#'                              weights = "weights",
+#'                              cluster = "SDMVPSU",
+#'                              strata = "SDMVSTRA",
+#'                              weights = "WTSAF2YR",
 #'                              k = 10, R = 20,
 #'                              rw.test = TRUE)
 #'
 #' # subbootstrap ------------------------------------------------------------
-#' newdata <- replicate.weights(data = simdata_lasso_binomial,
+#' newdata <- replicate.weights(data = nhanes2013_sbc,
 #'                              method = "subbootstrap",
-#'                              cluster = "cluster",
-#'                              strata = "strata",
-#'                              weights = "weights",
+#'                              cluster = "SDMVPSU",
+#'                              strata = "SDMVSTRA",
+#'                              weights = "WTSAF2YR",
 #'                              B = 100)
 #'
 #' # BRR ---------------------------------------------------------------------
-#' newdata <- replicate.weights(data = simdata_lasso_binomial,
+#' newdata <- replicate.weights(data = nhanes2013_sbc,
 #'                              method = "BRR",
-#'                              cluster = "cluster",
-#'                              strata = "strata",
-#'                              weights = "weights",
+#'                              cluster = "SDMVPSU",
+#'                              strata = "SDMVSTRA",
+#'                              weights = "WTSAF2YR",
 #'                              rw.test = TRUE)
 #'
 #' # split ---------------------------------------------------------------------
-#' newdata <- replicate.weights(data = simdata_lasso_binomial,
+#' newdata <- replicate.weights(data = nhanes2013_sbc,
 #'                              method = "split",
-#'                              cluster = "cluster",
-#'                              strata = "strata",
-#'                              weights = "weights",
+#'                              cluster = "SDMVPSU",
+#'                              strata = "SDMVSTRA",
+#'                              weights = "WTSAF2YR",
 #'                              R=20,
 #'                              train.prob = 0.5,
 #'                              method.split = "subbootstrap",
 #'                              rw.test = TRUE)
 #'
 #' # extrapolation -------------------------------------------------------------
-#'newdata <- replicate.weights(data = simdata_lasso_binomial,
+#'newdata <- replicate.weights(data = nhanes2013_sbc,
 #'                             method = "extrapolation",
-#'                             cluster = "cluster",
-#'                             strata = "strata",
-#'                             weights = "weights",
+#'                             cluster = "SDMVPSU",
+#'                             strata = "SDMVSTRA",
+#'                             weights = "WTSAF2YR",
 #'                             R=20,
 #'                             train.prob = 0.5,
 #'                             rw.test = TRUE)
@@ -274,17 +271,17 @@ cv.folds <- function(data, k, weights, strata=NULL, cluster=NULL, R=1, rw.test, 
 
   if(is.null(cluster) & !is.null(strata)){
     data$cluster <- 1:nrow(data)
-    cluster <- "cluster"
+    cluster <- "SDMVPSU"
   } else {
     if(!is.null(cluster) & is.null(strata)){
       data$strata <- rep(1, nrow(data))
-      strata <- "strata"
+      strata <- "SDMVSTRA"
     } else {
       if(is.null(cluster) & is.null(strata)){
         data$strata <- rep(1, nrow(data))
         data$cluster <- 1:nrow(data)
-        strata <- "strata"
-        cluster <- "cluster"
+        strata <- "SDMVSTRA"
+        cluster <- "SDMVPSU"
       }
     }
   }
@@ -409,17 +406,17 @@ rw.split <- function(data, train.prob, method = c("dCV", "bootstrap", "subbootst
 
   if(is.null(cluster) & !is.null(strata)){
     data$cluster <- 1:nrow(data)
-    cluster <- "cluster"
+    cluster <- "SDMVPSU"
   } else {
     if(!is.null(cluster) & is.null(strata)){
       data$strata <- rep(1, nrow(data))
-      strata <- "strata"
+      strata <- "SDMVSTRA"
     } else {
       if(is.null(cluster) & is.null(strata)){
         data$strata <- rep(1, nrow(data))
         data$cluster <- 1:nrow(data)
-        strata <- "strata"
-        cluster <- "cluster"
+        strata <- "SDMVSTRA"
+        cluster <- "SDMVPSU"
       }
     }
   }
