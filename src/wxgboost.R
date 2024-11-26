@@ -1,9 +1,9 @@
 #' Weighted XGBoost (wXGBoost) prediction models for complex survey data
 #'
-#'@description The function fits XGBoost prediction (linear or logistic) models for complex survey data, using sampling weights in the estimation process and 
-#'             selects the tuning parameters minimizing the error based on different replicating weights methods.  Detailed arguments refer to R-\code{xgboost}.
+#'@description A function to fit XGBoost prediction (linear or logistic) models for complex survey data with sampling weights in the estimation process and 
+#'             to select tuning parameters by minimizing the weighted mean error for a selected replicating weights method.  Detailed arguments are referred to in R-\code{\link{xgboost}}.
 #'
-#' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were added to the \code{design} argument.
+#' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were plugged into the \code{design} argument.
 #' @param y A vector of response variable. 
 #' @param col.x A numeric vector indicating indices of the covariates or a string vector indicating these column names.
 #' @param cluster A character string indicating the name of cluster identifiers. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
@@ -17,21 +17,21 @@
 #' @param verbose  `0` for xgboost to stay silent.  Default= `1` for printing information about performance. `2` for printing some additional information out. Note that setting verbose > 0 automatically engages the `cb.print.evaluation`(period=1) callback function.
 #' @param early_stopping_rounds \code{NULL} does not trigger the early stopping function. Setting to an integer k will stop training with a validation set unless the performance improve for k rounds.  Setting this parameter engages the `cb.early.stop` callback.
 #' @param final.model Boolean.  Default is \code{TRUE} printing out the object of class \code{xgb.Booster} for the final model selected by replicate weights' CV with corresponding predicted values.  
-#' @param method A character string indicating the method to be applied to define replicate weights. Choose between one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
-#' @param k The number of folds to be defined for \code{dCV} method. Default is \code{k=10}. 
-#' @param R The number of times the sample is partitioned for the \code{dCV} method. Default is \code{R=1}. Only applies for \code{dCV}, \code{split} or \code{extrapolation} methods.
-#' @param B The number of bootstrap resamples for \code{bootstrap} and  \code{subbootstrap} methods. Default is \code{B=200}.
+#' @param method A character string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
+#' @param k A numeric value defining the number of folds for the \code{dCV} method. Default is \code{k=10}.
+#' @param R A numeric value indicating the number of times the sample is partitioned for \code{dCV}, \code{split} or \code{extrapolation} method. Default is \code{R=1}.
+#' @param B A numeric value indicating the number of bootstrap resamples for \code{bootstrap} and \code{subbootstrap} methods. Default is \code{B=200}.
 #' @param dCV.sw.test A logical value indicating the method for estimating the error for \code{dCV} method. \code{FALSE}, (the default option) estimates the error for each test set and defines the cross-validated error based on the average strategy. 
 #'                   \code{TRUE} estimates the cross-validated error based on the pooling strategy.
-#' @param train.prob A numeric value between 0 and 1, indicating the proportion of clusters (for the method \code{split}) or strata (for the method \code{extrapolation}) to be set in the training sets. Default is \code{train.prob = 0.7}. Only applies for \code{split} and \code{extrapolation} methods.
-#' @param method.split A character string indicating the way in which replicate weights should be defined in the \code{split} method. Choose one of the following: \code{dCV}, \code{bootstrap} or \code{subbootstrap}. Only applies for \code{split} method.
+#' @param train.prob A numeric value between 0 and 1, indicating the proportion of clusters (for the method \code{split}) or strata (for the method \code{extrapolation}) to be set in the training sets. Default is \code{train.prob = 0.7}. Only applies to \code{split} and \code{extrapolation} methods.
+#' @param method.split A character string indicating a method of replicate weights to be implemented (\code{dCV}, \code{bootstrap} or \code{subbootstrap}) under the \code{split} method in the \code{method} argument.
 #' @param print.rw A logical value. If \code{TRUE}, the data set with the replicate weights is saved in the output object. Default \code{print.rw=FALSE}.
 #'
 #' 
 #' @seealso [xgboost::xgb.train()] for relevant arguments and return values in detail. 
 #'
 #'
-#' @return The output object of the function \code{wxgboost()} is an object of class \code{w.xgboost}. This object is a list containing 4 or 5 elements, depending on the value set to the argument \code{print.rw}. Below we describe the contents of these elements:
+#' @return The output object of the function \code{wxgboost()} is an object of class \code{w.xgboost}:
 #' - `CV.iterations`: A list containing information on tuning parameters, `nrounds` of three elements:
 #'   - `niter.range.per.R`: A matrix of the range of iterations of `k`-fold CV by replicate weights for `R` replicates
 #'   - `k_fold.best`: A matrix of best iterations, minimizing the average error, for corresponding folds for `R` replicates.
@@ -39,11 +39,12 @@
 #' - `CV.eval_log`: A list containing information of two elements:
 #'   - `CV`: A matrix of iteration-wise mean and sd for training and test sets, respectively.
 #'   - `Best_iteration`: A vector of minimum \code{CV.eval_log$CV} to pick up the final model corresponding to \code{CV.iteratons$best_iteration}.
-#' - `final.model`: A list containing information on the fitted models: an object of class \code{xgboost::xgb.Booster}. 
-#'                  Note that the selected model is fitted by the whole data set (and not uniquely the training sets).
+#' - `final.model`: A list containing information on the fitted model by \code{Best_iteration}: an object of class \code{xgboost::xgb.Booster}. 
+#'                  Note that the final model is fitted by the original \code{data}, not one of the generated training sets by replicate weights.
 #' - `predicted`: A vector of predicted values from `final.model`.
 #' - `data.rw`: A data frame containing the original data set and the replicate weights added to define training and test sets. Only included in the output object if \code{print.rw=TRUE}.
 #' - `call`:The call that executes this function producing the object of \code{w.xgboost}.
+#' 
 #' 
 #'
 #' @examples

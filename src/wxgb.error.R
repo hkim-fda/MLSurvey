@@ -2,11 +2,10 @@
 #'
 #' @description
 #' A function to evaluate XGBoost models by weighted mean error for binary outcome (`0/1`).  This function is a customized error function to 
-#' plug in the function \code{wxgboost()}.
-#' for complex survey data.
+#' plug in the function \code{wxgboost()} for complex survey data.
 #' 
 #' @param preds Predicted binary values (`0/1`) from the model.
-#' @param dtrain An object of \code{xgb.DMatrix} including `label`(response variable or binary outcome), `data`,`weight`.
+#' @param dtrain An object of \code{xgboost::xgb.DMatrix} including `label`(response variable or binary outcome), `data`,`weight`.
 #' @return A list of two components: 
 #' - `metric` : A string labelled as `weighted.error`.
 #' - `value`  : A numeric value of weighted mean error.
@@ -26,10 +25,10 @@ evalerror.bin<-function(preds,dtrain){
   return(list(metric="weighted.error", value=err)) }
 
 
-#' Weighted mean loss of logistic regression for complex survey data
+#' Weighted mean of log loss (binary cross-entropy loss) for complex survey data
 #'
 #' @description
-#' A function to evaluate XGBoost models by weighted mean loss for logistic regression. This function estimates predicted 
+#' A function to evaluate XGBoost models by weighted mean log loss for logistic regression. This function estimates predicted 
 #' probabilities from the predicted binary outcomes and computes the weighted mean of log likelihood values for Bernoulli distribution. 
 #' This function is a customized error function for complex survey data.
 #' 
@@ -62,7 +61,7 @@ eval.loss<- function(preds,dtrain){
 #'  This function is a customized error function for complex survey data.
 #' 
 #' @param preds Predicted values from the model
-#' @param dtrain An object of \code{xgb.DMatrix} including `label`(response variable), `data`,`weight`.
+#' @param dtrain An object of \code{xgboost::xgb.DMatrix} including `label`(response variable), `data`,`weight`.
 #' @return A list of two components:
 #'- `metric`: A string labelled as `weighted.mse`.
 #' - `value` : A numeric value of weighted mean squared error (MSE).

@@ -1,7 +1,7 @@
 #' Optimal (hyper-) parameter search for weighted XGBoost (wXGBoost) for complex survey data
 #'
 #' @description
-#' A function searching for optimal (hyper-) parameters by replicate weights for CV for XGBoost models.
+#' A function to search for optimal (hyper-) parameters by replicate weights to implement cross-validation (CV) for XGBoost models.
 #'
 #' @param y A numeric vector of response variable.
 #' @param col.x A numeric vector indicating indices of the covariates or a string vector indicating these column names.
