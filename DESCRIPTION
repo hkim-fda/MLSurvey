@@ -1,0 +1,27 @@
+Package: MLSurvey
+Title: Machine Learning for Complex Survey Data
+Version: 0.0.1.0
+Authors@R: 
+    person("Hyeonju", "Kim", , "hyeonjukm01@gmail.com", role = c("aut", "cre"),
+    comment=c(ORCID = "0000-0002-2368-4850"))
+
+Description: A package for developing machine learning models by proper cross-validation 
+methods (replicate weights methods) for survey data produced by complex sampling designs.  
+Currently offering weighted-Elastic Net, XGBoost, and randomForest for linear/logistic regression.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports:
+        glmnet,
+        graphics,
+        randomForest,
+        stats,
+        survey,
+        svyVarSel,
+        svyROC,
+        xgboost
+
+
+
+LazyData: true       
