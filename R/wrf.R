@@ -1,4 +1,4 @@
-#' Weighted Random Forest (wRF) prediction models for complex survey data
+#' Weighted Random Forest prediction models for complex survey data
 #'
 #'@description A function to fit wRF prediction (linear or logistic) models for complex survey data with sampling weights in the estimation process and
 #'            to select tuning parameters minimizing the weighted error for a selected replicating weights method.  Detailed arguments are referred to in R-\code{\link{randomForest}}.
@@ -8,7 +8,7 @@
 #' @param col.x A numeric vector indicating indices of columns for covariates or independent variables or a vector of character strings indicating names of these columns.
 #' @param xtest A data frame or matrix containing predictors for the test set.
 #' @param ytest A vector of response variable for the test set.
-#' @param mtree The number of trees to grow. This should not set to be too small a number, to ensure that every input row gets predicted at least a few times.
+#' @param ntree The number of trees to grow. This should not set to be too small a number, to ensure that every input row gets predicted at least a few times.
 #' @param mtry  The number of variables randomly sampled as candidates at each split. Note that the default values are different for classification (sqrt(p) where p is number of variables in x) and regression (p/3)
 #' @param cluster A character string indicating the name of cluster identifiers. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
 #' @param strata A character string indicating the name of strata identifiers. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
@@ -22,7 +22,7 @@
 #' @param train.prob A numeric between 0 and 1, indicating the proportion of clusters (for the method \code{split}) or strata (for the method \code{extrapolation}) to be set in the training sets. Default is \code{train.prob = 0.7}. Only applies for \code{split} and \code{extrapolation} methods.
 #' @param method.split A string of one the following replicate weights methods to be implemented under the \code{split} method in the \code{method} argument: \code{dCV}, \code{bootstrap} or \code{subbootstrap}.
 #' @param print.rw A logical value. If \code{TRUE}, the data set with the replicate weights is saved in the output object. Default \code{print.rw=FALSE}.
-#' @param ... optional parameters to be passed to the low level function \code{randomForest.default} in R-\code{randomForest}.
+#' @param replace,classwt,cutoff,sampsize,nodesize,maxnodes,importance,proximity,oob.prox,norm.votes,do.trace,keep.forest,corr.bias,keep.inbag,... Optional parameters to be passed to the low level function [randomForest::randomForest()].
 #'
 #'
 #' @seealso [randomForest::randomForest()] for arguments and return values in detail.
@@ -34,31 +34,35 @@
 #' - `evaluation_log`: A list containing information of two elements:
 #'   - `weighted.test.error`: A vector of the average errors corresponding to tuning parameters in \code{mtry$all}.
 #'   - `min.weighted.test.error`: An minimum error for the optimal tuning parameter from \code{mtry$optimal.mtry} to select the final model.
-#' - `model`: A list containing information on the fitted model by \code{optimal.mtry}: An object of class \code{randomForest} by \code{randomForest::randomForest()}.
+#' - `model`: A list containing information on the fitted model by \code{optimal.mtry}: an object of class \code{\link[randomForest]{randomForest}}.
 #'           Note that the selected model is fitted by the original \code{data}, not one of the generated training sets by replicate weights.
 #' - `data.rw`: A data frame containing the original data set and the replicate weights added to define training and test sets. Only included in the output object if \code{print.rw=TRUE}.
 #' - `call`: The call that executes this function producing the object of \code{w.randomforest}.
 #'
+#'@note
+#' `final.model` can leverage R-\code{randomForest} functionality for comprehensive data analysis for linear/logistic regression but will be
+#' extensively used for other models, i.e., Cox, Poisson, etc.
 #'
 #' @examples
-#' #to avoid only one PSU in a stratum
+#'  # Global options to avoid only one PSU in a stratum in a particular domain or subpopulation
 #' options(survey.adjust.domain.lonely=TRUE)
 #' options(survey.lonely.psu="adjust")
 #'
-#'  # Do not run!!
+#'
 #'  # For classification: y should be a factor.
-#'  # If a test set is provided, one can plug it into `xtest`, `ytest` just as implemented in \code{randomForest::randomForest()}.
+#'  # If a test set is provided, one can plug it into `xtest`, `ytest`
+#'  # just as implemented in \code{randomForest::randomForest()}.
 #'
 #'  data(nhanes2013_sbc)
-#' dcv.rf <- wRandomForest(data = nhanes2013_sbc,
+#' dcv.rf <- wRandomforest(data = nhanes2013_sbc,
 #'               y = as.factor(nhanes2013_sbc$HBP), col.x = 2:61,
 #'               cluster = "SDMVPSU", strata = "SDMVSTRA", weights = "WTSAF2YR",
-#'               method = "dCV", k=5 R=5,importance=TRUE,proximity = TRUE)
+#'               method = "dCV", k=5, R=5,importance=TRUE,proximity = TRUE)
 #'
 #' # Or equivalently:
 #' des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
 #'                               nest = TRUE, data =nhanes2013_sbc)
-#' dcv.rf <- wRandomForest(y = as.factor(nhanes2013_sbc$HBP), col.x = 2:61, design =des,
+#' dcv.rf <- wRandomforest(y = as.factor(nhanes2013_sbc$HBP), col.x = 2:61, design =des,
 #'                         importance=TRUE,proximity = TRUE,
 #'                         method = "dCV", k=5, R=5)
 #'
@@ -133,7 +137,7 @@ wRandomforest <- function(data = NULL, col.x = NULL, y = NULL, xtest=NULL,ytest=
   if (is.factor(y)) obj <- "binary:logistic" else obj <- "reg:squarederror"
 
   # Step 1: Generate replicate weights based on the method
-  newdata <- replicate.weights(data = data, method = method,
+  newdata <- replicate_weights(data = data, method = method,
                                cluster = cluster, strata = strata, weights = weights,
                                k = k, R = R, B = B,
                                train.prob = train.prob, method.split = method.split,

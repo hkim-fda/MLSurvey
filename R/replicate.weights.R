@@ -1,6 +1,6 @@
-#' Replicate weights
+#' Replicate weights methods
 #'
-#' @description A function calculating replicate weights imported from R-\code{wlasso} library.
+#' @description A function calculating replicate weights.
 #'
 #' @param data A data frame with information on (at least) cluster and strata indicators, and sampling weights. It could be \code{NULL} if the sampling design were indicated in the \code{design} argument (see \code{design}).
 #' @param method A string of a name of replicate weights methods. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
@@ -18,40 +18,19 @@
 #'
 #' @return The function returns a new data frame with new columns, each of which indicates replicate weights for different subsets.
 #'
-#' @details
-#' Some of these methods (specifically \code{JKn}, \code{bootstrap}, \code{subbootstrap} and \code{BRR}),
-#' were previously implemented in the \code{survey} R-package, from which we can access the function
-#' \code{\link[survey]{as.svrepdesign()}} (the names of the methods are kept as in \code{as.svrepdesign()}).
-#' Thus, the function \code{replicate.weights()} defines those replicate weights relying on these options.
-#' In contrast, \code{dCV}, \code{split} and \code{extrapolation} have been expressly defined in this function.
-#'
-#' Selecting any of the above-mentioned methods returns a new data frame,
-#' in which new columns are added to the original data set; each column by replicate
-#' weights creates different pairs of training (always) and test sets (optionally, controlled by the argument \code{rw.test}).
-#' The number of new columns and how to be denoted depend on numeric arguments (\code{k}, or \code{R}, etc.),
-#' in general, and on the selected replicate weights method, in particular. The new columns indicating training and test sets
-#' follow a similar structure for any selected method: \code{rw_r_x_train_t}, where \code{x=1,...,R} indicates the \code{x}-th partition of the sample and
-#' \code{t=1,...,T} does the \code{t}-th training set. Similarly, the new columns indicating test sets
-#' are structured as follows: \code{rw_r_x_test_t} or \code{sw_r_x_test_t}.  For some methods, we also indicate the fold or set for each unit
-#' in the data set has been included in each partition. This information is included as \code{fold_t} or \code{set_t},
-#' depending on the method. See more detailed information below.
-#'
-#' @references \url{https://github.com/aiparragirre/wlasso} or recently registered in CRAN: \code{\link{svyVarSel}}
-#'
-#'
-#'  @examples
+#' @examples
 #' data(nhanes2013_sbc)
 #'
-#' # JKn ---------------------------------------------------------------------
-#' newdata <- replicate.weights(data = nhanes2013_sbc,
+#' ## JKn ---------------------------------------------------------------------
+#' data_rw <- replicate_weights(data = nhanes2013_sbc,
 #'                              method = "JKn",
 #'                              cluster = "SDMVPSU",
 #'                              strata = "SDMVSTRA",
 #'                              weights = "WTSAF2YR",
 #'                              rw.test = TRUE)
 #'
-#' # dCV ---------------------------------------------------------------------
-#' newdata <- replicate.weights(data = nhanes2013_sbc,
+#' ## dCV ---------------------------------------------------------------------
+#' data_rw <- replicate_weights(data = nhanes2013_sbc,
 #'                              method = "dCV",
 #'                              cluster = "SDMVPSU",
 #'                              strata = "SDMVSTRA",
@@ -59,24 +38,25 @@
 #'                              k = 10, R = 20,
 #'                              rw.test = TRUE)
 #'
-#' # subbootstrap ------------------------------------------------------------
-#' newdata <- replicate.weights(data = nhanes2013_sbc,
+#' ## subbootstrap ------------------------------------------------------------
+#' data_rw <- replicate_weights(data = nhanes2013_sbc,
 #'                              method = "subbootstrap",
 #'                              cluster = "SDMVPSU",
 #'                              strata = "SDMVSTRA",
 #'                              weights = "WTSAF2YR",
 #'                              B = 100)
 #'
-#' # BRR ---------------------------------------------------------------------
-#' newdata <- replicate.weights(data = nhanes2013_sbc,
+#' ## BRR ---------------------------------------------------------------------
+#' data_rw <- replicate_weights(data = nhanes2013_sbc,
 #'                              method = "BRR",
 #'                              cluster = "SDMVPSU",
 #'                              strata = "SDMVSTRA",
 #'                              weights = "WTSAF2YR",
 #'                              rw.test = TRUE)
 #'
-#' # split ---------------------------------------------------------------------
-#' newdata <- replicate.weights(data = nhanes2013_sbc,
+#' ## split ---------------------------------------------------------------------
+#' \dontrun{
+#' data_rw <- replicate_weights(data = nhanes2013_sbc,
 #'                              method = "split",
 #'                              cluster = "SDMVPSU",
 #'                              strata = "SDMVSTRA",
@@ -85,9 +65,9 @@
 #'                              train.prob = 0.5,
 #'                              method.split = "subbootstrap",
 #'                              rw.test = TRUE)
-#'
-#' # extrapolation -------------------------------------------------------------
-#'newdata <- replicate.weights(data = nhanes2013_sbc,
+#'}
+#' ## extrapolation -------------------------------------------------------------
+#'data_rw <- replicate_weights(data = nhanes2013_sbc,
 #'                             method = "extrapolation",
 #'                             cluster = "SDMVPSU",
 #'                             strata = "SDMVSTRA",
@@ -96,8 +76,32 @@
 #'                             train.prob = 0.5,
 #'                             rw.test = TRUE)
 #'
+#'
+#' @details
+#' This function from R-\code{wlasso} (\url{https://github.com/aiparragirre/wlasso/}, recently registered in CRAN: \code{svyVarSel})
+#' is slightly modified for our package development.  The following description is also obtained from the original source for convenience.
+#'
+#' Some of replicate weights methods, such as \code{JKn}, \code{bootstrap}, \code{subbootstrap} and \code{BRR},
+#' are implemented in R-\code{survey}, \code{\link[survey]{as.svrepdesign}}, from which
+#' the \code{replicate_weights()} function generates replicate weights for these options;
+#' \code{dCV}, \code{split} and \code{extrapolation} have been expressly defined in this function.
+#'
+#' Selecting any of the above-mentioned methods returns a new data frame,
+#' in which new columns are added to the original data set; each column by replicate
+#' weights always creates different pairs of training sets and optionally the corresponding test sets by setting \code{rw.test=TRUE}.
+#' The number of new columns and their corresponding names are usually determined by numeric arguments, i.e.,\code{k}, or \code{R}, etc.
+#' and specifically by the selected replicate weights method. The new columns indicating training and test sets
+#' follow the similar structure for any selected method: \code{rw_r_x_train_t}, where \code{x=1,...,R}, and \code{t=1,...,T}
+#' indicate the \code{x}-th partition of the sample,the \code{t}-th training set, respectively.
+#' Similarly, the new columns for test sets are structured by \code{rw_r_x_test_t} or \code{sw_r_x_test_t}.
+#' For other methods, `fold` or `set` for each unit respectively labeled as \code{fold_t} or \code{set_t}
+#' is included in each partition depending on the method in a data set.
+#'
+#'
+#'
+#'
 #' @export
-replicate.weights <- function(data,
+replicate_weights <- function(data,
                               method = c("JKn", "dCV", "bootstrap", "subbootstrap",
                                          "BRR", "split", "extrapolation"),
                               cluster = NULL, strata = NULL, weights = NULL, design = NULL,
@@ -159,7 +163,7 @@ replicate.weights <- function(data,
 
   if(method == "dCV"){
 
-    newdata <- cv.folds(data, k, weights, strata, cluster, R, rw.test, dCV.sw.test)
+    newdata <- cv_folds(data, k, weights, strata, cluster, R, rw.test, dCV.sw.test)
 
     if(rw.test==TRUE & dCV.sw.test ==TRUE){
       for(r in 1:R){
@@ -185,7 +189,7 @@ replicate.weights <- function(data,
 
       if(method == "extrapolation"){
 
-        newdata <- split.strata(data, train.prob, strata, weights, R, rw.test)
+        newdata <- split_strata(data, train.prob, strata, weights, R, rw.test)
 
       } else {
 
@@ -265,23 +269,23 @@ replicate.weights <- function(data,
 
 
 
-# dCV
 
-cv.folds <- function(data, k, weights, strata=NULL, cluster=NULL, R=1, rw.test, dCV.sw.test){
-
+# @export
+cv_folds <- function(data, k, weights, strata=NULL, cluster=NULL, R=1, rw.test, dCV.sw.test){
+  # function for dCV
   if(is.null(cluster) & !is.null(strata)){
     data$cluster <- 1:nrow(data)
-    cluster <- "SDMVPSU"
+    cluster <- "cluster"
   } else {
     if(!is.null(cluster) & is.null(strata)){
       data$strata <- rep(1, nrow(data))
-      strata <- "SDMVSTRA"
+      strata <- "strata"
     } else {
       if(is.null(cluster) & is.null(strata)){
         data$strata <- rep(1, nrow(data))
         data$cluster <- 1:nrow(data)
-        strata <- "SDMVSTRA"
-        cluster <- "SDMVPSU"
+        strata <- "strata"
+        cluster <- "cluster"
       }
     }
   }
@@ -322,6 +326,7 @@ cv.folds <- function(data, k, weights, strata=NULL, cluster=NULL, R=1, rw.test, 
 
 f.folds <- function(data, k=5, strata=NULL, cluster=NULL){
 
+  hclus<- NULL
   data$hclus <- interaction(data[,strata], data[,cluster], drop=TRUE)
   newids <- levels(data$hclus)
   n <- length(newids)
@@ -398,32 +403,33 @@ repl.weights.test <- function(data, folds, test.fold, weights, strata=NULL, clus
 
 
 
-# Split-sample ------------------------------------------------------------
+
 
 
 rw.split <- function(data, train.prob, method = c("dCV", "bootstrap", "subbootstrap"),
                      weights, strata = NULL, cluster = NULL, R = 1, rw.test){
+  # function for Split-sample
 
   if(is.null(cluster) & !is.null(strata)){
     data$cluster <- 1:nrow(data)
-    cluster <- "SDMVPSU"
+    cluster <- "cluster"
   } else {
     if(!is.null(cluster) & is.null(strata)){
       data$strata <- rep(1, nrow(data))
-      strata <- "SDMVSTRA"
+      strata <- "strata"
     } else {
       if(is.null(cluster) & is.null(strata)){
         data$strata <- rep(1, nrow(data))
         data$cluster <- 1:nrow(data)
-        strata <- "SDMVSTRA"
-        cluster <- "SDMVPSU"
+        strata <- "strata"
+        cluster <- "cluster"
       }
     }
   }
 
   for(r in 1:R){
 
-    data <- split.sample(data, train.prob, r, strata, cluster)
+    data <- split_sample(data, train.prob, r, strata, cluster)
     tags <- as.vector(unique(data[,paste0("set_",r)]))
 
     if(method == "dCV"){
@@ -480,10 +486,10 @@ rw.split <- function(data, train.prob, method = c("dCV", "bootstrap", "subbootst
 }
 
 
-
-split.sample <- function(data, train.prob, r,
+# @export
+split_sample <- function(data, train.prob, r,
                          strata = NULL, cluster = NULL){
-
+  hclus<- NULL
   data[,strata] <- as.factor(data[,strata])
 
   set <- paste0("set_",r)
@@ -579,10 +585,11 @@ replicate.sample <- function(data, set, tag, strata, weights, r=1,
 
 
 
-# Extrapolation -----------------------------------------------------------
 
 
-split.strata <- function(data, train.prob, strata = NULL, weights, R = 1, rw.test){
+# @export
+split_strata <- function(data, train.prob, strata = NULL, weights, R = 1, rw.test){
+  # function for Extrapolation
 
   if(is.null(strata)){stop("Extrapolation method cannot be applied if strata are not defined")}
 

@@ -19,40 +19,44 @@
 #'             the sampling design should be plugged into the argument \code{design}.
 #' @param type Type of replicate weights.  Note: \code{JKn} for stratified, \code{JK1} for unstratified designs.
 #' @param B The number of bootstrap replicates.  Default is 2000.
-#' @param conf.level The width of confidence interval. Default is 0.95, i.e. 95 \% CI.
-#' @param fpc,fpctype,... Passed to \code{jk1weights, jknweights, brrweights, bootweights, subbootweights}, or \code{mrbweights}.
+#' @param conf.level The width of confidence interval. Default is 0.95.
+#' @param fpc,fpctype Passed to \code{jk1weights, jknweights, brrweights, bootweights, subbootweights}, or \code{mrbweights}.
 #' @param compress Use a compressed representation of the replicate weights matrix.
 #' @param ... optional parameters to be passed to the low level function \code{survey::as.svrepdesign()}.
 #' @param mse if TRUE, compute variances from sums of squares around the point estimate, rather than the mean of the replicates.
 #'
-#'
+#' @return confidence interval (CI) estimates
 #'
 #' @seealso [svyROC::wauc()] for detailed information on the implementation.
 #' @seealso [survey::as.svrepdesign()] for detailed information on replicate weights methods.
 #'
-#' @return confidence interval (CI) estimates
-#'
 #'
 #' @examples
+#' \dontrun{
 #' data(nhanes2013_sbc)
 #'
-#'  #Conveniently, update a dataset including yhat (a vector) estimated from any machine learning methods
-#' data1<-data.frame(nhanes2014_sbc[,c(1,64:65)],yhat)
+#' # For ad hoc adjustment for a single PSU stratum not to contribute to the variance
+#' options(survey.lonely.psu='remove')
 #'
-#'  # For estimating bootstrap 95\% CI for a model selected by dCV
-#' AUC.ci<- ci.wauc("HBP", yhat,weights="WTSAF2YR",cluster="SDMVPSU",strata="SDMVSTRA",data=data1,type="subbootstrap",B=2000)
+#' # Conveniently, update a dataset including yhat (a vector) estimated
+#' # from any machine learning methods
+#' data1<-data.frame(nhanes2013_sbc[,c(1,64:65)],yhat)
 #'
+#' # For estimating bootstrap 95\% CI for a model selected by dCV
+#' wAUC.ci<- ci_wauc("HBP", yhat,weights="WTSAF2YR",cluster="SDMVPSU",strata="SDMVSTRA",
+#'                  data=data1,type="subbootstrap",B=2000)
 #' #Or equivalently,
 #'
 #' des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
 #'                               nest = TRUE, data = nhanes2013_sbc)
 #'
-#' AUC.ci<- ci.wauc(des$variables$HBP,data1$yhat,design = des,type = "subbootstrap",B=2000)
-#'
+#' wAUC.ci<- ci_wauc(des$variables$HBP,data1$yhat,design = des,type = "subbootstrap",B=2000)
+#'}
 #' @export
 # library(wROC)
 # library(survey)
-options(survey.lonely.psu='remove')
+# for ad hoc adjustment for a single PSU stratum:
+# options(survey.lonely.psu='remove')
 
 ### weights,cluster,strata are names in data (character) unless design is included.
 #set.seed(234)
@@ -60,7 +64,7 @@ options(survey.lonely.psu='remove')
 #                    type=c("JK1","JKn", "bootstrap", "subbootstrap","mrbbootstrap", "BRR"),B=2000,conf.level=0.95,
 #                    fpc=NULL,fpctype=NULL,..., compress=TRUE,
 #                    mse=getOption("survey.replicates.mse"))
-ci.wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,cluster=NULL,strata=NULL,design=NULL,data=NULL,
+ci_wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,cluster=NULL,strata=NULL,design=NULL,data=NULL,
                      type=c("JK1","JKn", "bootstrap", "subbootstrap"),B=2000,conf.level=0.95,
                      fpc=NULL,fpctype=NULL,..., compress=TRUE,
                      mse=getOption("survey.replicates.mse")){
@@ -139,7 +143,7 @@ ci.wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,clust
       wauc.B<- rep(0,B)
       if(is.null(weights)){
        for(b in 1:B){
-          wauc.B[b]<- wROC::wauc(response.var=y, phat.var=yhat, weights.var = rep.weights[,b],
+          wauc.B[b]<- svyROC::wauc(response.var=y, phat.var=yhat, weights.var = rep.weights[,b],
                                  tag.event = tag.event, tag.nonevent = tag.nonevent)$AUCw
 
         }
@@ -148,7 +152,7 @@ ci.wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,clust
         WTs<-design$variables[,weights]
 
         for(b in 1:B){
-          wauc.B[b]<- wROC::wauc(response.var=y, phat.var=yhat, weights.var = WTs*rep.weights[,b],
+          wauc.B[b]<- svyROC::wauc(response.var=y, phat.var=yhat, weights.var = WTs*rep.weights[,b],
                                  tag.event = tag.event, tag.nonevent = tag.nonevent)$AUCw
 
         }

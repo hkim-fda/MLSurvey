@@ -3,7 +3,7 @@
 #'
 #' The data was extracted from The National Center for Health Statistics (NCHS)
 #' in the Centers for Diseases Control and Prevention (CDC) and has been processed to a sparse matrix for memory efficiency.
-#' The data includes the following information:
+#'
 #'
 #'
 #'
@@ -12,7 +12,7 @@
 #'
 #' @usage data(nhanes2013_sbc)
 #'
-#' @format An object of class \code{data.frame} with 1510 obs. of 66 variables:
+#' @format An object of class \code{data.frame} with 1510 obs. of 66 variables including
 #' \describe{
 #'     \item{HBP}{Binary response variable labeled as `1` for hypertension or high blood pressure. }
 #'     \item{SEQN}{Respondent sequence number.}
@@ -20,15 +20,9 @@
 #'     \item{SDMVPSU}{Masked Variance Pseudo-PSU, `cluster`.}
 #'     \item{SDMVSTRA}{Masked Variance Pseudo-Stratum, `strata`.}
 #'     \item{WTSAF2YR}{Fasting Subsample 2-year MEC Weight, `weights`.}
-#'     \item{}{All others are covariates.}
-#'
 #' }
-#'
 #' @keywords data
-#'
 #' @source <https://www.cdc.gov/nchs/nhanes/about_nhanes.htm>
-#'
 #' @examples
 #' data(nhanes2013_sbc)
-#'
 "nhanes2013_sbc"
