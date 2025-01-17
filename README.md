@@ -1,9 +1,3 @@
----
-editor_options: 
-  markdown: 
-    wrap: 72
----
-
 # MLSurvey
 
 ## *M*achine *L*earning for Complex *S*urvey Data
@@ -20,8 +14,8 @@ provides a visualization function for optimal variable selection for
 wElnet (*plot_wreg*) as an extension of R-surVarSel, computation of
 confidential interval (*ci_wauc*) for weighted area under the ROC curve
 (wAUC), where wAUC is optimally computed by
-R-[svyROC](https://github.com/aiparragirre/svyROC). Since all the weighted ML
-methods are extended by existing algorithms,
+R-[svyROC](https://github.com/aiparragirre/svyROC). Since all the
+weighted ML methods are extended by existing algorithms,
 [glmnet](https://github.com/cran/glmnet),
 [xgboost](https://github.com/dmlc/xgboost/tree/master), and
 [randomForest](https://www.stat.berkeley.edu/~breiman/RandomForests/),
