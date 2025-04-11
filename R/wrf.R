@@ -1,7 +1,8 @@
-#' Weighted Random Forest prediction models for complex survey data
+#' Weighted Random Forest prediction models (wRF) for complex survey data
 #'
-#'@description A function to fit wRF prediction (linear or logistic) models for complex survey data with sampling weights in the estimation process and
-#'            to select tuning parameters minimizing the weighted error for a selected replicating weights method.  Detailed arguments are referred to in R-\code{\link{randomForest}}.
+#'@description A model selection function for fitting wRF (linear or logistic) models for complex survey data with sampling weights
+#'             by a replicating weights method to select optimal tuning parameters by weighted error minimization.
+#'             Detailed arguments are referred to in R-\code{\link{randomForest}}.
 #'
 #' @param data A data frame with information about independent variables, as well as sampling weights and strata and cluster indicators. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
 #' @param y A vector of the response variable. If a factor, classification is assumed, otherwise, regression is assumed. If omitted, randomForest will run in a unsupervised mode.
@@ -184,7 +185,7 @@ wRandomforest <- function(data = NULL, col.x = NULL, y = NULL, xtest=NULL,ytest=
   result$mtry <- list(all = opt_mtry,
                       optimal.mtry = opt.mtry)
   result$evaluation_log <- list(weighted.test.error = error,
-                                min.weighted.test.error = min(error)       )
+                                min.weighted.test.error = min(error))
   result$model <- model
   result$call <- match.call()
 

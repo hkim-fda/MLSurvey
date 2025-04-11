@@ -1,7 +1,8 @@
-#' Weighted XGBoost prediction models for complex survey data
+#' Weighted XGBoost prediction models (wXGBoost) for complex survey data
 #'
-#'@description A function to fit XGBoost prediction (linear or logistic) models for complex survey data with sampling weights in the estimation process and
-#'             to select tuning parameters by minimizing the weighted mean error for a selected replicating weights method.  Detailed arguments are referred to in R-\code{\link{xgboost}}.
+#'@description A model selection function for fitting XGBoost (linear or logistic) models for complex survey data with sampling weights
+#'             by a replicating weights method to select optimal tuning parameters by weighted error minimization.
+#'             Detailed arguments are referred to in R-\code{\link{xgboost}}.
 #'
 #' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were plugged into the \code{design} argument.
 #' @param y A vector of response variable.
