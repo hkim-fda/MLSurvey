@@ -12,11 +12,14 @@ RoxygenNote: 7.3.2
 Imports:
         glmnet,
         graphics,
+        doParallel,
         randomForest,
         stats,
         survey,
         svyROC,
         xgboost
 Suggests:
-        svyVarSel
+        svyVarSel,
+        parallel,
+        foreach
 LazyData: true       

@@ -7,7 +7,6 @@
 #' @import randomForest
 #' @import xgboost
 #' @import glmnet
-#' @import foreach
 #' @import doParallel
 #'
 NULL
