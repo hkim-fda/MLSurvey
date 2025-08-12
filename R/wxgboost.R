@@ -24,7 +24,7 @@
 #' @param missing Default is set to `NA`, which means that `NA` values should be considered as 'missing' by the algorithm.  Sometimes, `0` or other extreme values might be used to represent missing values. This parameter is only used when input is a dense matrix.
 #' @param final.model Boolean.  Default is \code{TRUE} printing out the object of class \code{xgb.Booster} for the final model selected by replicate weights' CV with corresponding predicted values.
 #' @param method A character string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
-#' @param k An integer. The number of folds for the \code{dCV} method. Default is \code{k=10}.
+#' @param nfolds An integer. The number of folds for the \code{dCV} method. Default is \code{nfolds=10}.
 #' @param R An integer. The number of times the sample is partitioned for \code{dCV}, \code{split} or \code{extrapolation} method. Default is \code{R=1}.
 #' @param B An integer. The number of bootstrap re-samples for \code{bootstrap} and \code{subbootstrap} methods. Default is \code{B=200}.
 #' @param dCV.sw.test A logical value indicating the method for estimating the error for \code{dCV} method. \code{FALSE}, (the default option) estimates the error for each test set and defines the cross-validated error based on the average strategy.
@@ -46,9 +46,9 @@
 #'
 #' @return The output object of the function \code{wXGBoost()} is an object of class \code{w.xgboost}:
 #' - `CV.iterations`: A list containing information on tuning parameters, `nrounds` of three elements:
-#'   - `niter.range.per.R`: A matrix of the range of iterations of `k`-fold CV by replicate weights for `R` replicates
-#'   - `k_fold.best`: A matrix of best iterations, minimizing the average error, for corresponding folds for `R` replicates.
-#'   - `best_iteration`: An optimal `nround` that minimizes mean test error.
+#'   - `niter.range.per.R`: A matrix of the range of iterations of `K`-fold CV by replicate weights for `R` replicates
+#'   - `K_fold.best`: A matrix of best iterations, minimizing the average error, for corresponding folds for `R` replicates.
+#'   - `best_iteration`: An optimal boosting iteration that minimizes mean test error.
 #' - `CV.eval_log`: A list containing information of two elements:
 #'   - `CV`: A matrix of iteration-wise mean and sd for training and test sets, respectively.
 #'   - `Best_iteration`: A vector of minimum \code{CV.eval_log$CV} to pick up the final model corresponding to \code{CV.iteratons$best_iteration}.
@@ -59,8 +59,7 @@
 #' - `call`:The call that executes this function producing the object of \code{w.xgboost}.
 #'
 #' @note
-#' `final.model` can leverage R-\code{xgboost} functionality for comprehensive data analysis for linear/logistic regression but will be
-#' extensively used for other models, i.e., Cox, Poisson, etc.
+#' `final.model` can leverage R-\code{xgboost} functionality for comprehensive data analysis for linear/logistic regression.
 #'
 #' @examples
 #'
@@ -83,14 +82,14 @@
 #'               y = nhanes2013_sbc$HBP, col.x = 2:61,
 #'               cluster = "SDMVPSU", strata = "SDMVSTRA", weights = "WTSAF2YR",
 #'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
-#'               method = "dCV", k=10, R=20)
+#'               method = "dCV", nfolds=10, R=20)
 #'\dontrun{
 #' # Or equivalently:
 #' des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
 #'                               nest = TRUE, data = nhanes2013_sbc)
 #' xgb.cv <- wXGBoost(y = nhanes2013_sbc$HBP, col.x = 2:61, design = des,
 #'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
-#'               method = "dCV", k=10, R=20)
+#'               method = "dCV", nfolds=10, R=20)
 #'               }
 #'@export
 wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,
@@ -98,7 +97,7 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,
                    params = list(), nrounds, verbose = 0, print_every_n = 1L,
                    maximize = FALSE, early_stopping_rounds = 8, final.model=TRUE,
                    method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),
-                   k = 10, R = 1, B = 200, dCV.sw.test = FALSE,feval=NULL,
+                   nfolds = 10, R = 1, B = 200, dCV.sw.test = FALSE,feval=NULL,
                    train.prob = 0.7, method.split = c("dCV", "bootstrap", "subbootstrap"),
                    print.rw = FALSE, save_period = NULL, save_name = "wxgboost.model",
                    wxgb_model = NULL, callbacks = list(), ...){
@@ -127,12 +126,12 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,
   }
 
   if(method != "dCV"){
-    if(!is.null(k) & k!=10){cat("Selected method:", method,". The argument k =",k, "is not needed and, hence, has been ignored.")}
+    if(!is.null(nfolds) & nfolds!=10){cat("Selected method:", method,". The argument nfolds =",nfolds, "is not needed and, hence, has been ignored.")}
   }
 
   if(method == "dCV"){
-    if(k != round(k)){stop("The argument 'k' must be an integer. k=",k," is not an integer.\nPlease, set a valid value for 'k' or skip the argument to select the default option k=10.")}
-    if(k < 1){stop("The argument 'k' must be a positive integer. k=",k," is not a positive integer.\nPlease, set a valid value for 'k' or skip the argument to select the default option k=10.")}
+    if(nfolds != round(nfolds)){stop("The argument 'nfolds' must be an integer. nfolds=",nfolds," is not an integer.\nPlease, set a valid value for 'nfolds' or snfoldsip the argument to select the default option nfolds=10.")}
+    if(nfolds < 1){stop("The argument 'nfolds' must be a positive integer. nfolds=",nfolds," is not a positive integer.\nPlease, set a valid value for 'nfolds' or snfoldsip the argument to select the default option nfolds=10.")}
   }
 
   if(!(method %in% c("bootstrap", "subbootstrap"))){
@@ -140,7 +139,7 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,
   }
 
   if(method %in% c("bootstrap", "subbootstrap")){
-    if(B != round(B)){stop("The argument 'B' must be an integer. B=",B," is not an integer.\nPlease, set a valid value for 'B' or skip the argument to select the default option B=200.")}
+    if(B != round(B)){stop("The argument 'B' must be an integer. B=",B," is not an integer.\nPlease, set a valid value for 'B' or snfoldsip the argument to select the default option B=200.")}
     if(B < 1){stop("The argument 'B' must be a positive integer. B=",B," is not a positive integer.\nPlease, set a valid value for 'B' or skip the argument to select the default option B=200.")}
   }
 
@@ -161,7 +160,7 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,
   # Step 1: Generate replicate weights based on the method
   newdata <- replicate_weights(data = data, method = method,
                                cluster = cluster, strata = strata, weights = weights,
-                               k = k, R = R, B = B,
+                               nfolds = nfolds, R = R, B = B,
                                train.prob = train.prob, method.split = method.split,
                                rw.test = TRUE, dCV.sw.test = dCV.sw.test)
 
@@ -170,7 +169,7 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,
   mat<- as.matrix(data[,col.x])
 
   xgb_model <- NULL
-  Niter<-NULL; Niter.max<-NULL; k.fold.best.iter<-matrix(0,nrow=k,ncol = R)
+  Niter<-NULL; Niter.max<-NULL; k.fold.best.iter<-matrix(0,nrow=nfolds,ncol = R)
   k.fold.error <- list();
         #attach eval.nonpara.R for testing measure
   if(is.null(feval)){
@@ -216,7 +215,7 @@ for (r in 1:R){
     min.niter<- min(total.iter)
       train.eval<- NULL
       test.eval <- NULL
-    for (j in 1:k){
+    for (j in 1:nfolds){
           train.eval <- cbind(train.eval,eval.log[[j]][1:min.niter,2])
           test.eval <- cbind(test.eval,eval.log[[j]][1:min.niter,3])
     }
@@ -259,7 +258,7 @@ for (r in 1:R){
    }
   result <- list()
   result$CV.iterations <- list(niter.range.per.R = rbind(Niter,Niter.max),
-                               k_fold.best=k.fold.best.iter,
+                               K_fold.best=k.fold.best.iter,
                                best_iteration = best_iter)
   result$CV.eval_log <- list(CV = Eval.log,
                              Best_iteration =  Eval.log[best_iter,])

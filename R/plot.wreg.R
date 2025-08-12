@@ -24,7 +24,7 @@
 #' # Or equivalently, with weighted Elastic Net,
 #' wen <- wElnet(data = nhanes2013_sbc, col.y = "HBP", col.x = 2:61,alpha =1,
 #'               family = "binomial", cluster = "SDMVPSU", strata = "SDMVSTRA",
-#'               weights = "WTSAF2YR", method = "dCV", k=10, R=20)
+#'               weights = "WTSAF2YR", method = "dCV", nfolds=10, R=20)
 #' plot_wreg(wen)
 #'
 #' @export

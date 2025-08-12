@@ -1,17 +1,17 @@
 error.f <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
-                    R = NULL, k = NULL, B = NULL,
+                    R = NULL, nfolds = NULL, B = NULL,
                     col.y, family, weights = NULL){
 
   if(method == "JKn"){
     R <- 1
-    k <- length(grep("rw", colnames(data)))
+    nfolds <- length(grep("rw", colnames(data)))
     initial.name <- "sw"
     cv.error.ind <- TRUE
   }
 
   if(method %in% c("bootstrap", "subbootstrap")){
     R <- 1
-    k <- B
+    nfolds <- B
     weights.name <- weights
     cv.error.ind <- FALSE
   }
@@ -26,27 +26,27 @@ error.f <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
 
   if(method == "BRR"){
     R <- 1
-    k <- length(l.yhat)
+    nfolds <- length(l.yhat)
     initial.name <- "rw"
     cv.error.ind <- FALSE
   }
 
   if(method %in% c("split","extrapolation")){
-    k <- 1
+    nfolds <- 1
     initial.name <- "rw"
     cv.error.ind <- FALSE
   }
 
   if(!cv.error.ind){
-    error.lambda.r <- matrix(NA, nrow = R*k, ncol = dim(l.yhat[[1]])[2])
-    rownames(error.lambda.r) <- 1:(R*k)
+    error.lambda.r <- matrix(NA, nrow = R*nfolds, ncol = dim(l.yhat[[1]])[2])
+    rownames(error.lambda.r) <- 1:(R*nfolds)
   }
 
   l.loss <- l.loss.w <- list()
 
   for(r in 1:R){
 
-    for(kk in 1:k){
+    for(kk in 1:nfolds){
 
       # Define the names of the weights' columns
       if(method %in% c("JKn", "dCV", "BRR", "bootstrap", "subbootstrap")){
@@ -69,8 +69,8 @@ error.f <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
       # Calculate the error
       if(!cv.error.ind){
         sumwi.k <- sum(data[, weights.name])
-        error.lambda.r[(r-1)*k + kk,] <- apply(l.loss.w[[yhat.name]],2,sum)/sumwi.k
-        rownames(error.lambda.r)[(r-1)*k + kk] <- paste0(method, "_r_", r, "_k_", kk)
+        error.lambda.r[(r-1)*nfolds + kk,] <- apply(l.loss.w[[yhat.name]],2,sum)/sumwi.k
+        rownames(error.lambda.r)[(r-1)*nfolds + kk] <- paste0(method, "_r_", r, "_k_", kk)
       }
 
     }

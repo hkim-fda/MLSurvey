@@ -35,7 +35,7 @@ The complete list of parameters is found on \code{\link[xgboost:xgb.train]{xgboo
 
 \item{nitr}{The number of iterations in the \code{for}-loop to search for optimal (hyper-) parameters.  Default is \code{100}.}
 
-\item{nfolds}{The number of folds to be defined for \code{dCV} method. Default is \code{k=10}.}
+\item{nfolds}{The number of folds to be defined for \code{dCV} method. Default is \code{nfolds=10}.}
 
 \item{R}{The number of times the sample is partitioned for the \code{dCV} method. Default is \code{R=1}.}
 

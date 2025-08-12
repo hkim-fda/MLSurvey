@@ -1,18 +1,18 @@
 # 
 eval.error <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
-                    R = NULL, k = NULL, B = NULL,
+                    R = NULL, nfolds = NULL, B = NULL,
                     y, objective, weights = NULL){
 
-  if(method == "JKn"){
+  if(method == "Jnfoldsn"){
     R <- 1
-    k <- length(grep("rw", colnames(data)))
+    nfolds <- length(grep("rw", colnames(data)))
     initial.name <- "sw"
     cv.error.ind <- TRUE
   }
 
   if(method %in% c("bootstrap", "subbootstrap")){
     R <- 1
-    k <- B
+    nfolds <- B
     weights.name <- weights
     cv.error.ind <- FALSE
   }
@@ -27,20 +27,20 @@ eval.error <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
 
   if(method == "BRR"){
     R <- 1
-    k <- length(l.yhat)
+    nfolds <- length(l.yhat)
     initial.name <- "rw"
     cv.error.ind <- FALSE
   }
 
   if(method %in% c("split","extrapolation")){
-    k <- 1
+    nfolds <- 1
     initial.name <- "rw"
     cv.error.ind <- FALSE
   }
 
   if(!cv.error.ind){
-    error.lambda.r <- rep(0,R*k)
-    names(error.lambda.r) <- 1:(R*k)
+    error.lambda.r <- rep(0,R*nfolds)
+    names(error.lambda.r) <- 1:(R*nfolds)
   }
 
   l.loss <- l.loss.w <- list()
@@ -48,7 +48,7 @@ eval.error <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
   for(r in 1:R){
     
 
-    for(kk in 1:k){
+    for(kk in 1:nfolds){
 
       # Define the names of the weights' columns
       if(method %in% c("JKn", "dCV", "BRR", "bootstrap", "subbootstrap")){
@@ -82,9 +82,9 @@ eval.error <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
          sumwi.r <- apply(data[, rcol.rw.newdata],2,sum)
          sum.wi.li.r <- unlist(lapply(l.loss.w[rcol.yhat],sum))
 
-        error.lambda.r[(r-1)*k+1:k] <- sum.wi.li.r/sumwi.r
+        error.lambda.r[(r-1)*nfolds+1:nfolds] <- sum.wi.li.r/sumwi.r
         # apply(l.loss.w[[yhat.name]],2,sum)/sumwi.k
-        names(error.lambda.r)[(r-1)*k+1:k] <- paste0(method, "_r_", r, "_k_", 1:k)
+        names(error.lambda.r)[(r-1)*nfolds+1:nfolds] <- paste0(method, "_r_", r, "_k_", 1:nfolds)
         # print(paste0("weighted.error", error.lambda.r))
       }
 

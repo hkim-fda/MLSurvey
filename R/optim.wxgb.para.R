@@ -9,7 +9,7 @@
 #'              The complete list of parameters is found on [xgboost::xgb.train()] or \url{https://xgboost.readthedocs.io/en/latest/parameter.html}.
 #' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were added to the \code{design} argument.
 #' @param nitr The number of iterations in the \code{for}-loop to search for optimal (hyper-) parameters.  Default is `100`.
-#' @param nfolds The number of folds to be defined for \code{dCV} method. Default is \code{k=10}.
+#' @param nfolds The number of folds to be defined for \code{dCV} method. Default is \code{nfolds=10}.
 #' @param R The number of times the sample is partitioned for the \code{dCV} method. Default is \code{R=1}.
 #' @param nRounds The maximum number of boosting iterations.
 #' @param missing Default is set to `NA`, which means that `NA` values should be considered as 'missing' by the algorithm.  Sometimes, `0` or other extreme values might be used to represent missing values. This parameter is only used when input is a dense matrix.
@@ -88,7 +88,7 @@ optim_wxgb_para<-function(y,col.x,param=list(),nitr=100,nfolds=10,R=1,nRounds=10
                                    params = param, nrounds=nRounds, verbose = 0, print_every_n = print_every_n,
                                    early_stopping_rounds = nstop, final.model=FALSE,
                                    method = method,maximize=maximize,
-                                   k = nfolds, R = R, dCV.sw.test = FALSE,
+                                   nfolds = nfolds, R = R, dCV.sw.test = FALSE,
                                    print.rw = FALSE, save_period = NULL, save_name = "wxgboost.model",
                                    wxgb_model = NULL, callbacks = list(), ...)
 

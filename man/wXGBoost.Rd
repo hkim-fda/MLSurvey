@@ -2,7 +2,7 @@
 % Please edit documentation in R/wxgboost.R
 \name{wXGBoost}
 \alias{wXGBoost}
-\title{Weighted XGBoost prediction models for complex survey data}
+\title{Weighted XGBoost prediction models (wXGBoost) for complex survey data}
 \usage{
 wXGBoost(
   data = NULL,
@@ -21,7 +21,7 @@ wXGBoost(
   early_stopping_rounds = 8,
   final.model = TRUE,
   method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),
-  k = 10,
+  nfolds = 10,
   R = 1,
   B = 200,
   dCV.sw.test = FALSE,
@@ -32,7 +32,7 @@ wXGBoost(
   save_period = NULL,
   save_name = "wxgboost.model",
   wxgb_model = NULL,
-  callbacks = list(),
+  callbacnfoldss = list(),
   ...
 )
 }
@@ -71,7 +71,7 @@ This parameter is passed to the \code{\link[xgboost]{cb.early.stop}} callback.}
 
 \item{method}{A character string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.}
 
-\item{k}{An integer. The number of folds for the \code{dCV} method. Default is \code{k=10}.}
+\item{nfolds}{An integer. The number of folds for the \code{dCV} method. Default is \code{nfolds=10}.}
 
 \item{R}{An integer. The number of times the sample is partitioned for \code{dCV}, \code{split} or \code{extrapolation} method. Default is \code{R=1}.}
 
@@ -95,19 +95,19 @@ Default evaluation metric is assigned by \code{params:objective}: weighted mse (
 
 \item{wxgb_model}{A previously built model to continue the training from. Could be either an object of class \code{xgb.Booster}, i.e., \code{final.model} from the object of class \code{w.xgboost}, its raw data, or the name of a file with a previously saved model.}
 
+\item{...}{optional parameters to be passed to the low level function \code{xgboost::xgb.train()} or \code{xgboost::xgboost()}.}
+
 \item{callbacks}{A list of callback functions to perform various task during boosting. See \code{\link[xgboost]{callbacks}}. Some of the callbacks are automatically created depending on the parameters’ values.
 Users can provide either existing or their own callback methods in order to customize the training process.}
-
-\item{...}{optional parameters to be passed to the low level function \code{xgboost::xgb.train()} or \code{xgboost::xgboost()}.}
 }
 \value{
 The output object of the function \code{wXGBoost()} is an object of class \code{w.xgboost}:
 \itemize{
 \item \code{CV.iterations}: A list containing information on tuning parameters, \code{nrounds} of three elements:
 \itemize{
-\item \code{niter.range.per.R}: A matrix of the range of iterations of \code{k}-fold CV by replicate weights for \code{R} replicates
-\item \code{k_fold.best}: A matrix of best iterations, minimizing the average error, for corresponding folds for \code{R} replicates.
-\item \code{best_iteration}: An optimal \code{nround} that minimizes mean test error.
+\item \code{niter.range.per.R}: A matrix of the range of iterations of \code{K}-fold CV by replicate weights for \code{R} replicates
+\item \code{K_fold.best}: A matrix of best iterations, minimizing the average error, for corresponding folds for \code{R} replicates.
+\item \code{best_iteration}: An optimal boosting iteration that minimizes mean test error.
 }
 \item \code{CV.eval_log}: A list containing information of two elements:
 \itemize{
@@ -122,12 +122,12 @@ Note that the final model is fitted by the original \code{data}, not one of the 
 }
 }
 \description{
-A function to fit XGBoost prediction (linear or logistic) models for complex survey data with sampling weights in the estimation process and
-to select tuning parameters by minimizing the weighted mean error for a selected replicating weights method.  Detailed arguments are referred to in R-\code{\link{xgboost}}.
+A model selection function for fitting XGBoost (linear or logistic) models for complex survey data with sampling weights
+by a replicating weights method to select optimal tuning parameters by weighted error minimization.
+Detailed arguments are referred to in R-\code{\link{xgboost}}.
 }
 \note{
-\code{final.model} can leverage R-\code{xgboost} functionality for comprehensive data analysis for linear/logistic regression but will be
-extensively used for other models, i.e., Cox, Poisson, etc.
+\code{final.model} can leverage R-\code{xgboost} functionality for comprehensive data analysis for linear/logistic regression.
 }
 \examples{
 
@@ -150,14 +150,14 @@ xgb.cv <- wXGBoost(data = nhanes2013_sbc,
               y = nhanes2013_sbc$HBP, col.x = 2:61,
               cluster = "SDMVPSU", strata = "SDMVSTRA", weights = "WTSAF2YR",
               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
-              method = "dCV", k=10, R=20)
+              method = "dCV", nfolds=10, R=20)
 \dontrun{
 # Or equivalently:
 des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
                               nest = TRUE, data = nhanes2013_sbc)
 xgb.cv <- wXGBoost(y = nhanes2013_sbc$HBP, col.x = 2:61, design = des,
               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
-              method = "dCV", k=10, R=20)
+              method = "dCV", nfolds=10, R=20)
               }
 }
 \seealso{

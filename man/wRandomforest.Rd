@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrf.R
 \name{wRandomforest}
 \alias{wRandomforest}
-\title{Weighted Random Forest prediction models for complex survey data}
+\title{Weighted Random Forest prediction models (wRF) for complex survey data}
 \usage{
 wRandomforest(
   data = NULL,
@@ -15,7 +15,7 @@ wRandomforest(
   weights = NULL,
   design = NULL,
   method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),
-  k = 10,
+  nfolds = 10,
   R = 1,
   B = 200,
   dCV.sw.test = FALSE,
@@ -63,7 +63,7 @@ wRandomforest(
 
 \item{method}{A character string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.}
 
-\item{k}{An integer. The number of folds for the \code{dCV} method. Default is \code{k=10}.}
+\item{nfolds}{An integer. The number of folds for the \code{dCV} method. Default is \code{nfolds=10}.}
 
 \item{R}{An integer. The number of times the sample is partitioned for \code{dCV}, \code{split} or \code{extrapolation} method. Default is \code{R=1}.}
 
@@ -88,7 +88,7 @@ The output object of the function \code{wRandomforest()} is an object of class \
 \itemize{
 \item \code{mtry}: A list containing information on \code{mtry} as a tuning parameter (the number of predictors sampled for splitting at each node):
 \itemize{
-\item \code{all}: A numeric vector of \code{k*R} \code{mtry}- values, i.e. \code{mtry} for each fold per replicate.
+\item \code{all}: A numeric vector of \code{nfolds*R} \code{mtry}- values, i.e. \code{mtry} for each fold per replicate.
 \item \code{optimal.mtry}: An optimal tuning parameter, \code{mtry} among \code{mtry$all} that minimizes the average error.
 }
 \item \code{evaluation_log}: A list containing information of two elements:
@@ -103,8 +103,9 @@ Note that the selected model is fitted by the original \code{data}, not one of t
 }
 }
 \description{
-A function to fit wRF prediction (linear or logistic) models for complex survey data with sampling weights in the estimation process and
-to select tuning parameters minimizing the weighted error for a selected replicating weights method.  Detailed arguments are referred to in R-\code{\link{randomForest}}.
+A model selection function for fitting wRF (linear or logistic) models for complex survey data with sampling weights
+by a replicating weights method to select optimal tuning parameters by weighted error minimization.
+Detailed arguments are referred to in R-\code{\link{randomForest}}.
 }
 \note{
 \code{final.model} can leverage R-\code{randomForest} functionality for comprehensive data analysis for linear/logistic regression but will be
@@ -124,14 +125,14 @@ options(survey.lonely.psu="adjust")
 dcv.rf <- wRandomforest(data = nhanes2013_sbc,
               y = as.factor(nhanes2013_sbc$HBP), col.x = 2:61,
               cluster = "SDMVPSU", strata = "SDMVSTRA", weights = "WTSAF2YR",
-              method = "dCV", k=5, R=5,importance=TRUE,proximity = TRUE)
+              method = "dCV", nfolds=5, R=5,importance=TRUE,proximity = TRUE)
 
 # Or equivalently:
 des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
                               nest = TRUE, data =nhanes2013_sbc)
 dcv.rf <- wRandomforest(y = as.factor(nhanes2013_sbc$HBP), col.x = 2:61, design =des,
                         importance=TRUE,proximity = TRUE,
-                        method = "dCV", k=5, R=5)
+                        method = "dCV", nfolds=5, R=5)
 
 }
 \seealso{
