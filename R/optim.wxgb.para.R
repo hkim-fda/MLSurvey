@@ -1,12 +1,14 @@
 #' Optimal (hyper-) parameter search for weighted XGBoost (wXGBoost) for complex survey data
 #'
 #' @description
-#' A function to search for optimal (hyper-) parameters by replicate weights to implement cross-validation (CV) for XGBoost models.
+#' A function to automate an optimal search for (hyper-) parameter via random sampling cross validataion 
+#' by replicate weights methods, `wXGBoost`, without estimating final model (`final.model=FALSE`).
 #'
 #' @param y A numeric vector of response variable.
 #' @param col.x A numeric vector indicating indices of the covariates or a string vector indicating these column names.
-#' @param param The list of parameters.  Should include \code{objective} to be a string of either `binary:logistic` for binary classification or `reg:squarederror` for linear regression.
-#'              The complete list of parameters is found on [xgboost::xgb.train()] or \url{https://xgboost.readthedocs.io/en/latest/parameter.html}.
+#' @param custom_space A named list passed downwards to modify structural parameters or samplers. Defaults to an empty \code{list()}.  
+#'                    See also [generate_wxgb_params()]. The complete list of parameters is found on 
+#'                     [xgboost::xgb.train()] or \url{https://xgboost.readthedocs.io/en/latest/parameter.html}.               
 #' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were added to the \code{design} argument.
 #' @param nitr The number of iterations in the \code{for}-loop to search for optimal (hyper-) parameters.  Default is `100`.
 #' @param nfolds The number of folds to be defined for \code{dCV} method. Default is \code{k=10}.
@@ -15,7 +17,8 @@
 #' @param missing Default is set to `NA`, which means that `NA` values should be considered as 'missing' by the algorithm.  Sometimes, `0` or other extreme values might be used to represent missing values. This parameter is only used when input is a dense matrix.
 #' @param method A character string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
 #' @param nstop \code{NULL} does not trigger the early stopping function. Setting to an integer k will stop training with a validation set unless the performance improve for k rounds.  Setting this parameter engages the `cb.early.stop` callback.
-#' @param maximize \code{nstop} is set, then this parameter must be set as well. When it is TRUE, it means the larger the evaluation score the better. This parameter is passed to the cb.early.stop callback.
+#' @param seed An integer to set the seed for random parameter reproducibility.  This is not for `wXGBoost()` implementation but for `generate_wxgb_params()`.
+#' @param maximize If \code{nstop} is set, then this parameter must be set as well. Default is `FALSE` since the weighted loss function is used for minimization. This parameter is passed to the cb.early.stop callback.
 #' @param cluster A character string of a cluster identifier. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
 #' @param strata A character string of a strata identifier. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
 #' @param weights A character string of a sampling weights' identifier. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
@@ -27,43 +30,42 @@
 #' @seealso [wXGBoost()], [replicate_weights()] for detailed information on implementation.
 #'
 #' @return   A list of return values for optimal (hyper-)parameters as follows:
-#' - `nrounds` : The best iteration number having the best evaluation metric value
-#' - `snumber` : A seed number for \code{set.seed()} yielding the optimal (hyper-)parameters.
-#' - `params`  : A list of optimal (hyper-) parameters selected among `nitr` models implemented by `wxgboost()` with `dCV` on every iteration.
-#'
+#' - `nrounds` : The best iteration number having the best evaluation metric value, i.e., minimum mean test error
+#' - `params`  : A list of optimal (hyper-) parameters selected among all the `nitr` models implemented by `wxgboost(final.model=FALSE)`.
+#' - `min_test_errors`: A table of all minimum weighted test errors and corresponding best iteration numbers for `nitr` iterations.  One can check how `nrounds` has 
+#'                     been chosen to be optimal by the minimum weighted test error.
 #'
 #' @examples
 #'  ## Set user defined (hyper-)parameters:
-#'  param <- list(objective = "binary:logistic",
-#'                  max_depth = sample(4:8, 1),
-#'                   eta = runif(1, .01, .3),
-#'                   gamma = runif(1, 0.0, 1),
-#'                   subsample = 0.5, # much smaller for large N
-#'                   colsample_bytree = runif(1, .5, .8),
-#'                   min_child_weight = sample(1:40, 1),
-#'                   max_delta_step = sample(1:10, 1) ) # for very imbalanced case
+#'  custom  <- list(nthread=3, 
+#'                max_depth = 5,
+#'                eta = function() runif(1, 0.05, 0.15),
+#'                subsample = 0.5, # much smaller for large N
+#'                max_delta_step = sample(1:10, 1) ) # for very imbalanced case
+#'   
 #'
 #'   ## search for optimal parameters
 #'  data(nhanes2013_sbc)
 #'  Mydesign <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
 #'                               nest = TRUE, data = nhanes2013_sbc)
-#'  opt.par<- optim_wxgb_para(nhanes2013_sbc$HBP,2:61,param,method="dCV",
+#'  opt.par<- optim_wxgb_para(nhanes2013_sbc$HBP,2:61,custom,method="dCV",
 #'                            design=Mydesign,print_every_n=250L)
 #' \dontrun{
 #'  ## fitting the optimal model
-#'  set.seed(opt.par$snumber)
-#'
+#'  
 #'  ### The data needs to be a sparse matrix without intercept.
-#'  ### Generate a sparse matrix from a regular dataset
+#'  ### Generate a sparse matrix from a regular dataset for training
 #'  unwtData<-nhanes2013_sbc[,-c(62:66)]   #excluding weight related vectors
 #'  Mat<- sparse.model.matrix(HBP~. ,data = unwtdata )[,-1]   #dropping intercept
 #'  wtData <- xgb.DMatrix(data = nhanes2013_sbc,label=nhanes2013_sbc$HBP,
 #'                        weight=nhanes2013_sbc$WTSAF2YR)
-#'
-#'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,feval = evalerror.bin)
+#'  
+#'  # Can either include test data--it should be a xgb.DMatrix object-- in `evals` with `early_stopping_rounds` for better performance or not.
+#'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,early_stopping_rounds=10,
+#'                 evals=list(train=wtData,test=test.data),custom_metric = evalerror.bin, verbose=0)
 #'}
 #' @export
-optim_wxgb_para<-function(y,col.x,param=list(),nitr=100,nfolds=10,R=1,nRounds=10000,nstop=5,
+optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,nRounds=10000,nstop=5,seed= 120,
                           method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),
                           missing = NA, maximize=FALSE,cluster = NULL, strata = NULL, weights = NULL,
                           design = NULL,data=NULL,print_every_n=50L,...){
@@ -79,28 +81,127 @@ optim_wxgb_para<-function(y,col.x,param=list(),nitr=100,nfolds=10,R=1,nRounds=10
     data <- get(design$call$data)
   }
 
+  # for reproducibility
+  set.seed(seed)
+  
+  mt_errors<-numeric(nitr); mitrs<-numeric(nitr);mpara<-vector("list", nitr)
 
-                 for (iter in 1:nitr) {
-                    seed.number = sample.int(10000,1)
-                    set.seed(seed.number)
-                    wxgb<-wXGBoost(data = data, y =y, col.x = col.x,missing = missing,
+                 for (iter in seq_len(nitr)) {
+                   # Generate parameters dynamically using the custom space configuration
+                   param <- generate_wxgb_params(custom_space)
+                  
+                   # Run Cross-Validation safely inside a tryCatch block
+                    wxgb<- tryCatch({ 
+                          wXGBoost(data = data, y =y, col.x = col.x,missing = missing,
                                    cluster = cluster, strata = strata, weights = weights,
                                    params = param, nrounds=nRounds, verbose = 0, print_every_n = print_every_n,
                                    early_stopping_rounds = nstop, final.model=FALSE,
                                    method = method,maximize=maximize,
                                    k = nfolds, R = R, dCV.sw.test = FALSE,
                                    print.rw = FALSE, save_period = NULL, save_name = "wxgboost.model",
-                                   wxgb_model = NULL, callbacks = list(), ...)
-
-                    min_weight.error = min(wxgb$CV.eval_log$CV$mean.test.error)
-                    best_eval = 100
-                    if (min_weight.error < best_eval) {
-                             best_eval = min_weight.error
-                             best_iter_num = wxgb$CV.iterations$best_iteration # having the best evaluation metric value
-                             best_seednumber = seed.number
-                             best_param = param
-            }
-        }
-
-   return(list(nrounds=best_iter_num,snumber=best_seednumber,params = best_param))
+                                    callbacks = list())}, error = function(e) {
+                                      # This prints the specific error message to your console
+                                      message(paste0("\n!! Warning: Iteration ", iter, " failed. Error details: ", e$message))
+                                      return(NULL) 
+                                    })
+                    # Handle failed iterations gracefully
+                    if (is.null(wxgb)) {
+                        mt_errors[iter] <- NA
+                        mitrs[iter]     <- NA
+                        mpara[[iter]]   <- param
+                        next
+                      }
+                      
+                     
+                      cv_results[[length(cv_results) + 1]] <- list(
+                      param = param,
+                      min_errors = wxgb$CV.eval_log$Best_iteration[["mean.test.error"]],
+                      best_iter = wxgb$CV.iterations$best_iteration 
+                    )
+                      # # min_weight.error = min(wxgb$CV.eval_log$CV$mean.test.error)
+                      mt_errors[iter]<-wxgb$CV.eval_log$Best_iteration[["mean.test.error"]]
+                      mitrs[iter] <- wxgb$CV.iterations$best_iteration # having the best evaluation metric value
+                      mpara[[iter]] <-param
+                 }
+  
+         valid_indices <- which(!is.na(mt_errors))
+    if (length(valid_indices) == 0) stop("All cross-validation iterations failed.")
+  
+        best_idx <- valid_indices[which.min(mt_errors[valid_indices])]
+        
+                      
+   return(list(nrounds=mitrs[best_idx],
+               params = mpara[[best_idx]], 
+               min_test_errors = data.frame(min_iter=mitrs,min_test_error=mt_errors)))
  }
+
+
+
+#' Generate randomized wXGBoost hyperparameters for Tuning
+#' 
+#' @description
+#' This helper function creates a complete list of valid wXGBoost hyperparameters.
+#' It combines core structural configurations, regularization parameters, and 
+#' tree-building criteria. By default, it sets up a diverse random search space, 
+#' but users can inject fixed overrides or custom sampling closures.
+#'
+#' @param custom_space A named list of values or functions to override defaults. The list can contain static values (e.g., \code{subsample = 0.8}) 
+#'                     or anonymous functions that return a single value when called (e.g., \code{function() sample(3:10, 1)}).  
+#'                     Default \code{objective} is `binary:logistic` for binary classification; `reg:squarederror` is set for linear regression.
+#' @return A named list of parameters ready to be parsed by \code{wXGBoost()}.
+#' 
+#' @note
+#' This function can also be used for [xgboost::xgb.train()] or [xgboost::xgb.cv()]. 
+#' 
+#' @examples
+#' # Generate using default search spaces
+#' generate_wxgb_params()
+#'
+#' # Force a static max_depth and pass a custom eta sampler
+#' generate_xgb_params(list(
+#'   max_depth = 6,
+#'   eta = function() runif(1, 0.05, 0.15)
+#' ))
+#' 
+#' @export
+generate_wxgb_params <- function(custom_space = list()) {
+  
+  # 1. Define the exhaustive default search space (Core + Tree Booster)
+  defaults <- list(
+    # General Parameters
+    objective           = "binary:logistic",
+    nthread             = 1,
+    
+    # Tree Booster Hyperparameters
+    eta                 = runif(1, 0.01, 0.3),
+    gamma               = runif(1, 0.0, 10.0),
+    max_depth           = sample(3:10, 1),
+    min_child_weight    = sample(1:20, 1),
+    max_delta_step      = 0,               # for very imbalanced case : (1:10) helps
+    subsample           = runif(1, 0.5, 1.0),
+    colsample_bytree    = runif(1, 0.5, 1.0),
+    colsample_bylevel   = 1.0,
+    colsample_bynode    = 1.0,
+    alpha               = runif(1, 0.0, 1.0), # L1 regularization
+    lambda              = runif(1, 1.0, 4.0), # L2 regularization
+    tree_method         = "auto",
+    scale_pos_weight    = 1.0,
+    
+    # Random Seed
+    seed                = sample.int(100000, 1)
+  )
+  
+  # 2. Merge user custom space overrides into the defaults
+  search_space <- modifyList(defaults, custom_space)
+  
+  # 3. Evaluate the space (executes the functions to get the actual numbers)
+  params <- lapply(search_space, function(x) {
+    if (is.function(x)) {
+      x() # Execute user or default random function
+    } else {
+      x   # Return fixed value as-is
+    }
+  })
+  
+  return(params)
+}
