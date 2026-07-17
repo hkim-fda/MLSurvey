@@ -2,6 +2,7 @@
 #' @importFrom stats as.formula coef predict runif weighted.mean sd quantile
 #' @importFrom graphics abline mtext
 #' @importFrom svyROC wauc
+#' @importFrom utils modifyList
 #'
 #' @import survey
 #' @import randomForest
