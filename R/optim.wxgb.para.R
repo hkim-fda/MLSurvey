@@ -1,8 +1,8 @@
 #' Optimal (hyper-) parameter search for weighted XGBoost (wXGBoost) for complex survey data
 #'
 #' @description
-#' A function to automate an optimal search for (hyper-) parameter via random sampling cross validataion 
-#' by replicate weights methods, `wXGBoost`, without estimating final model (`final.model=FALSE`).
+#' A function to automate an optimal search for (hyper-) parameter via random sampling and to perform cross validation 
+#' by replicate weights methods, `wXGBoost`.  The final model is not estimated (`final.model=FALSE`).
 #'
 #' @param y A numeric vector of response variable.
 #' @param col.x A numeric vector indicating indices of the covariates or a string vector indicating these column names.
@@ -36,13 +36,12 @@
 #'                     been chosen to be optimal by the minimum weighted test error.
 #'
 #' @examples
-#'  ## Set user defined (hyper-)parameters:
+#'  ## Set user defined (hyper-)parameters for random search: 
 #'  custom  <- list(nthread=3, 
 #'                max_depth = 5,
 #'                eta = function() runif(1, 0.05, 0.15),
 #'                subsample = 0.5, # much smaller for large N
 #'                max_delta_step = sample(1:10, 1) ) # for very imbalanced case
-#'   
 #'
 #'   ## search for optimal parameters
 #'  data(nhanes2013_sbc)
@@ -137,7 +136,7 @@ optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,nR
 
 
 
-#' Generate randomized wXGBoost hyperparameters for Tuning
+#' Generate randomized wXGBoost hyperparameters for tuning
 #' 
 #' @description
 #' This helper function creates a complete list of valid wXGBoost hyperparameters.
@@ -151,14 +150,16 @@ optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,nR
 #' @return A named list of parameters ready to be parsed by \code{wXGBoost()}.
 #' 
 #' @note
+#' The function is encapsulated in `optim_wxgb_para()` to dynamically create a (hyper)parameter set 
+#' for `wXGBoost()` per iteration for optimzation.
 #' This function can also be used for [xgboost::xgb.train()] or [xgboost::xgb.cv()]. 
 #' 
 #' @examples
 #' # Generate using default search spaces
-#' generate_wxgb_params()
+#' para.default<-generate_wxgb_params()
 #'
 #' # Force a static max_depth and pass a custom eta sampler
-#' generate_xgb_params(list(
+#' custom.para<- generate_xgb_params(list(
 #'   max_depth = 6,
 #'   eta = function() runif(1, 0.05, 0.15)
 #' ))
