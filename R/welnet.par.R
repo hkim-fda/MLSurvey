@@ -71,7 +71,7 @@ cv.wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
   # .packages ensures required dependencies are loaded on each worker node
   results <- foreach::foreach(
     a = alpha,
-    .packages = c("survey", "glmnet", "svyVarSel") 
+    .packages = c("survey", "glmnet") 
   ) %dopar% {
     
     # Dynamic default for lambda.min.ratio if not provided by user
