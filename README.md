@@ -23,9 +23,7 @@ the final models can take advantage of their corresponding original
 packages to get more comprehensive results, such as importance plots,
 prediction, etc.
 
-**Note**: This will be extended to wider model developments, such as
-Cox, Poisson, etc., and will be available for Julia programming
-language.
+**Note**: The package is updating for improvement and will be available soon!
 
 ## Installation
 
