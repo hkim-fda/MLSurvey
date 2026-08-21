@@ -1,9 +1,9 @@
-#' Parallel cross-validated Weighted Elastic Net across a sequence of alpha values
+#' Parallel Weighted Elastic Net across a sequence of alpha values
 #'
-#' @description Fits [wElnet()] once per value of \code{alpha}, assigning each
+#' @description Fits [wElnet()] per value of \code{alpha}, assigning each
 #'              alpha to its own CPU core via the \code{parallel} package, and
 #'              then selects the overall best (alpha, lambda) combination by
-#'              minimizing the average cross-validated error across all fits.
+#'              minimizing the average weighted error across all fits.
 #'
 #'              This function always uses a \code{"PSOCK"} cluster, on every
 #'              platform (Windows, Mac, Linux), because it is designed to run
@@ -70,7 +70,6 @@
 #' en.par$best          # winning w.elnet object (same structure as wElnet() output)
 #' }
 #'
-#' @importFrom parallel makeCluster stopCluster clusterEvalQ parLapply detectCores
 #' @export
 par_wElnet <- function(alpha = c(0.000, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216,
                                  0.343, 0.512, 0.729, 1.000),

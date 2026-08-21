@@ -3,7 +3,7 @@
 #'@description A model selection function fitting Elastic Net (linear or logistic) models with sampling weights
 #'             by a replicating weights method to select an optimal lambda for a given alpha by weighted error minimization.
 #'             This is extended from `wlasso::wlasso()`, which is now officially available in \code{\link[svyVarSel]{wlasso}}. For an extended
-#'             model selection for a sequence of alpha's by CPU parallel computing, use [cv.wElnet()].
+#'             model selection for a sequence of alpha's by CPU parallel computing, use [par_wElnet()].
 #'
 #' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were replaced in the \code{design} argument.
 #' @param col.y A numeric value indicating the index of the response variable or a string of the response variable name .
@@ -206,6 +206,7 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
                         min = lambda.min)
   result$error <- list(average = mean.error,
                        all = error)
+  result$alpha <- alpha
   result$model <- list()
   result$model$grid <- list(a0 = model.orig$a0,
                             beta = model.orig$beta,
@@ -220,3 +221,50 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
   return(result)
 
 }
+
+
+#' Print method for \code{w.elnet} objects (single-alpha \code{wElnet()} output)
+#'
+#' @description A short summary of a \code{\link{wElnet}} fit: the alpha used,
+#'              the selected \code{lambda.min} and its weighted error, the number
+#'              of nonzero coefficients (degrees of freedom) at that lambda, and the
+#'              size of the lambda grid that was searched.
+#'
+#' @param x An object of class \code{w.elnet}, the output of \code{\link{wElnet}}.
+#' @param digits Integer number of significant digits to use when printing numeric
+#'               values. Default is \code{4}.
+#' @param ... Currently unused; included for S3 consistency with \code{print()}.
+#'
+#' @return Invisibly returns \code{x}. Called for its side effect of printing to the console.
+#'
+#' @examples
+#' \dontrun{
+#' library(MLSurvey)
+#' data(nhanes2013_sbc)
+#'
+#' en.dcv <- wElnet(data = nhanes2013_sbc,
+#'                  col.y = "HBP", col.x = 2:61,
+#'                  family = "binomial", alpha = 0.729,
+#'                  cluster = "SDMVPSU", strata = "SDMVSTRA", weights = "WTSAF2YR",
+#'                  method = "dCV", k = 10, R = 20)
+#'
+#' en.dcv          # or print(en.dcv)
+#' }
+#'
+#' @export
+print.w.elnet <- function(x, digits = 4, ...){
+
+  min.idx    <- which.min(abs(x$lambda$grid - x$lambda$min))
+  min.error  <- x$error$average[min.idx]
+  min.df     <- x$model$grid$df[min.idx]
+
+  cat("Weighted Elastic Net (wElnet)\n\n")
+  cat("alpha:            ", signif(x$alpha, digits), "\n")
+  cat("lambda (min):     ", signif(x$lambda$min, digits), "\n")
+  cat("Weighted error at min:", signif(min.error, digits), "\n")
+  cat("Nonzero coefs:    ", min.df, "\n")
+  cat("Lambda grid size: ", length(x$lambda$grid), "\n")
+
+  invisible(x)
+}
+
