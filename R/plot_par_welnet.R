@@ -25,7 +25,18 @@
 #' @param palette A vector of colors to cycle through for the different alphas in the
 #'                \code{"profile"} plot. Defaults to \code{grDevices::hcl.colors(n, "Zissou 1")},
 #'                where \code{n} is the number of alphas.
-#' @param ... Additional graphical parameters passed to the underlying \code{plot()} calls.
+#' @param main.profile,xlab.profile,ylab.profile Optional strings overriding the title
+#'                and axis labels of the \code{"profile"} panel. If \code{NULL} (default),
+#'                sensible defaults are used ("Error profile by alpha", "log(lambda)" or
+#'                "lambda", and "Weighted error").
+#' @param main.summary,xlab.summary,ylab.summary Optional strings overriding the title
+#'                and axis labels of the \code{"summary"} panel. If \code{NULL} (default),
+#'                sensible defaults are used ("Best error by alpha", "alpha", and
+#'                "Minimum weighted error").
+#' @param ... Additional graphical parameters (e.g. \code{col}, \code{pch}, \code{cex},
+#'            \code{lwd}) passed to the underlying \code{plot()} calls. Do not pass
+#'            \code{main}, \code{xlab}, or \code{ylab} here -- use the dedicated arguments
+#'            above instead.
 #'
 #' @return Invisibly returns \code{x}. Called for its side effect of producing a plot.
 #'
@@ -45,12 +56,16 @@
 #' plot(en.par)                    # both panels
 #' plot(en.par, type = "profile")  # just the error-vs-lambda curves
 #' plot(en.par, type = "summary")  # just the best-error-vs-alpha curve
+#' plot(en.par, type = "profile", main.profile = "My custom title", xlab.profile = "Penalty")
 #' }
 #'
 #' @export
 plot.par.w.elnet <- function(x, type = c("both", "profile", "summary"),
                              log.lambda = TRUE, legend.pos = "topright",
-                             palette = NULL, ...){
+                             palette = NULL,
+                             main.profile = NULL, xlab.profile = NULL, ylab.profile = NULL,
+                             main.summary = NULL, xlab.summary = NULL, ylab.summary = NULL,
+                             ...){
 
   type <- match.arg(type)
 
@@ -88,10 +103,12 @@ plot.par.w.elnet <- function(x, type = c("both", "profile", "summary"),
     xlim <- range(unlist(x.list), na.rm = TRUE)
     ylim <- range(unlist(error.list), na.rm = TRUE)
 
+    xlab.p <- if(!is.null(xlab.profile)) xlab.profile else if(log.lambda) "log(lambda)" else "lambda"
+    ylab.p <- if(!is.null(ylab.profile)) ylab.profile else "Weighted error"
+    main.p <- if(!is.null(main.profile)) main.profile else "Error profile by alpha"
+
     graphics::plot(NA, xlim = xlim, ylim = ylim,
-                  xlab = if(log.lambda) "log(lambda)" else "lambda",
-                  ylab = "Weighted error",
-                  main = "Error profile by alpha", ...)
+                  xlab = xlab.p, ylab = ylab.p, main = main.p, ...)
 
     for(i in seq_len(n.alpha)){
       graphics::lines(x.list[[i]], error.list[[i]], col = palette[i], lwd = 2)
@@ -119,9 +136,12 @@ plot.par.w.elnet <- function(x, type = c("both", "profile", "summary"),
     a.ord <- x$summary$alpha[ord]
     e.ord <- x$summary$min.error[ord]
 
+    xlab.s <- if(!is.null(xlab.summary)) xlab.summary else "alpha"
+    ylab.s <- if(!is.null(ylab.summary)) ylab.summary else "Minimum weighted error"
+    main.s <- if(!is.null(main.summary)) main.summary else "Best error by alpha"
+
     graphics::plot(a.ord, e.ord, type = "b", pch = 16, lwd = 2,
-                  xlab = "alpha", ylab = "Minimum weighted error",
-                  main = "Best error by alpha", ...)
+                  xlab = xlab.s, ylab = ylab.s, main = main.s, ...)
 
     graphics::points(best.alpha, best.error, pch = 8, cex = 1.8, lwd = 2, col = "red")
     graphics::abline(v = best.alpha, lty = 2, col = "grey50")
@@ -147,7 +167,12 @@ plot.par.w.elnet <- function(x, type = c("both", "profile", "summary"),
 #' @param log.lambda A logical value. If \code{TRUE} (default), the x-axis is
 #'                    \code{log(lambda)}, matching \code{glmnet} convention. If \code{FALSE},
 #'                    lambda is plotted on its original scale.
-#' @param ... Additional graphical parameters passed to the underlying \code{plot()} call.
+#' @param main,xlab,ylab Optional strings overriding the plot title and axis labels. If
+#'                \code{NULL} (default), sensible defaults are used ("Error profile
+#'                (alpha = ...)", "log(lambda)" or "lambda", and "Weighted error").
+#' @param ... Additional graphical parameters (e.g. \code{col}, \code{lwd}, \code{lty})
+#'            passed to the underlying \code{plot()} call. Do not pass \code{main},
+#'            \code{xlab}, or \code{ylab} here -- use the dedicated arguments above instead.
 #'
 #' @return Invisibly returns \code{x}. Called for its side effect of producing a plot.
 #'
@@ -163,10 +188,12 @@ plot.par.w.elnet <- function(x, type = c("both", "profile", "summary"),
 #'                  method = "dCV", k = 10, R = 20)
 #'
 #' plot(en.dcv)
+#' plot(en.dcv, main = "My custom title", xlab = "Penalty", ylab = "Error")
 #' }
 #'
 #' @export
-plot.w.elnet <- function(x, log.lambda = TRUE, ...){
+plot.w.elnet <- function(x, log.lambda = TRUE,
+                         main = NULL, xlab = NULL, ylab = NULL, ...){
 
   if(!inherits(x, "w.elnet")){
     stop("'x' must be an object of class 'w.elnet', the output of wElnet().")
@@ -179,12 +206,14 @@ plot.w.elnet <- function(x, log.lambda = TRUE, ...){
   best.error <- error[which.min(abs(lambda - x$lambda$min))]
 
   # alpha is stored directly on the w.elnet object (added in wElnet()).
-  main.txt <- paste0("Error profile (alpha = ", signif(x$alpha, 3), ")")
+  main.default <- paste0("Error profile (alpha = ", signif(x$alpha, 3), ")")
+
+  main.txt <- if(!is.null(main)) main else main.default
+  xlab.txt <- if(!is.null(xlab)) xlab else if(log.lambda) "log(lambda)" else "lambda"
+  ylab.txt <- if(!is.null(ylab)) ylab else "Weighted error"
 
   graphics::plot(x.vals, error, type = "l", lwd = 2,
-                xlab = if(log.lambda) "log(lambda)" else "lambda",
-                ylab = "Weighted error",
-                main = main.txt, ...)
+                xlab = xlab.txt, ylab = ylab.txt, main = main.txt, ...)
 
   graphics::points(best.x, best.error, pch = 8, cex = 1.5, lwd = 2, col = "red")
   graphics::abline(v = best.x, lty = 2, col = "grey50")
@@ -196,4 +225,12 @@ plot.w.elnet <- function(x, log.lambda = TRUE, ...){
   invisible(x)
 }
 
+
+#' @export
+print.par.w.elnet <- function(x, ...){
+  cat("Parallel Weighted Elastic Net over", nrow(x$summary), "alpha value(s)\n\n")
+  print(x$summary[order(x$summary$alpha), ])
+  cat("\nBest alpha:", x$best.alpha, "\n")
+  invisible(x)
+}
 

@@ -1,6 +1,6 @@
 #' Parallel Weighted Elastic Net across a sequence of alpha values
 #'
-#' @description Fits [wElnet()] per value of \code{alpha}, assigning each
+#' @description A CPU distributed computation that fits [wElnet()] per value of \code{alpha}, assigning each
 #'              alpha to its own CPU core via the \code{parallel} package, and
 #'              then selects the overall best (alpha, lambda) combination by
 #'              minimizing the average weighted error across all fits.
