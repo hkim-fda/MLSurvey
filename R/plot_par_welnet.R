@@ -1,6 +1,6 @@
 #' Plot method for \code{par.w.elnet} objects
 #'
-#' @description Visualizes the results of [par_wElnet()]: the weighted
+#' @description A plot method to visualize the results of [par_wElnet()]: the weighted
 #'              error curve across the lambda grid for each alpha, and/or a
 #'              summary of the best (minimum) error achieved by each alpha,
 #'              with the overall best (alpha, lambda) combination highlighted.
@@ -158,7 +158,7 @@ plot.par.w.elnet <- function(x, type = c("both", "profile", "summary"),
 
 #' Plot method for \code{w.elnet} objects (single-alpha \code{wElnet()} output)
 #'
-#' @description Visualizes the weighted error curve across the lambda grid for
+#' @description A method to visualize the weighted error curve across the lambda grid for
 #'              a single \code{\link{wElnet}} fit (i.e. a single, fixed alpha), marking
 #'              the selected \code{lambda.min}. This is the single-alpha counterpart to
 #'              [plot.par.w.elnet()], which handles the multi-alpha output of [par_wElnet()].
@@ -225,12 +225,4 @@ plot.w.elnet <- function(x, log.lambda = TRUE,
   invisible(x)
 }
 
-
-#' @export
-print.par.w.elnet <- function(x, ...){
-  cat("Parallel Weighted Elastic Net over", nrow(x$summary), "alpha value(s)\n\n")
-  print(x$summary[order(x$summary$alpha), ])
-  cat("\nBest alpha:", x$best.alpha, "\n")
-  invisible(x)
-}
 

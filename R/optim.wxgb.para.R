@@ -112,12 +112,6 @@ optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,nR
                       }
                       
                      
-                      cv_results[[length(cv_results) + 1]] <- list(
-                      param = param,
-                      min_errors = wxgb$CV.eval_log$Best_iteration[["mean.test.error"]],
-                      best_iter = wxgb$CV.iterations$best_iteration 
-                    )
-                      # # min_weight.error = min(wxgb$CV.eval_log$CV$mean.test.error)
                       mt_errors[iter]<-wxgb$CV.eval_log$Best_iteration[["mean.test.error"]]
                       mitrs[iter] <- wxgb$CV.iterations$best_iteration # having the best evaluation metric value
                       mpara[[iter]] <-param
@@ -139,15 +133,41 @@ optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,nR
 #' Generate randomized wXGBoost hyperparameters for tuning
 #' 
 #' @description
-#' This helper function creates a complete list of valid wXGBoost hyperparameters.
+#' A helper function creating a complete list of valid wXGBoost hyperparameters.
 #' It combines core structural configurations, regularization parameters, and 
 #' tree-building criteria. By default, it sets up a diverse random search space, 
 #' but users can inject fixed overrides or custom sampling closures.
 #'
 #' @param custom_space A named list of values or functions to override defaults. The list can contain static values (e.g., \code{subsample = 0.8}) 
 #'                     or anonymous functions that return a single value when called (e.g., \code{function() sample(3:10, 1)}).  
-#'                     Default \code{objective} is `binary:logistic` for binary classification; `reg:squarederror` is set for linear regression.
-#' @return A named list of parameters ready to be parsed by \code{wXGBoost()}.
+#'                     Default \code{objective} is `binary:logistic` for binary classification; `reg:squarederror` is set for linear regression. 
+#'                     The default search space is defined as follows:
+#'                      \preformatted{
+#'                        defaults <- list(
+#'                          # General Parameters
+#'                          objective           = "binary:logistic",
+#'                          nthread             = 1,
+#'                          # Tree Booster Hyperparameters
+#'                          eta                 = runif(1, 0.01, 0.3),
+#'                          gamma               = runif(1, 0.0, 10.0),
+#'                          max_depth           = sample(3:10, 1),
+#'                          min_child_weight    = sample(1:20, 1),
+#'                          max_delta_step      = 0,               # for very imbalanced case : (1:10) helps
+#'                          subsample           = runif(1, 0.5, 1.0),
+#'                          colsample_bytree    = runif(1, 0.5, 1.0),
+#'                          colsample_bylevel   = 1.0,
+#'                          colsample_bynode    = 1.0,
+#'                          alpha               = runif(1, 0.0, 1.0), # L1 regularization
+#'                          lambda              = runif(1, 1.0, 4.0), # L2 regularization
+#'                          tree_method         = "auto",
+#'                          scale_pos_weight    = 1.0,
+#'                          # Random Seed
+#'                          seed                = sample.int(100000, 1)
+#'                          )
+#'                      }
+#'                     
+#' @return A named list of parameters ready to be parsed by \code{wXGBoost()}. 
+#' 
 #' 
 #' @note
 #' The function is encapsulated in `optim_wxgb_para()` to dynamically create a (hyper)parameter set 
