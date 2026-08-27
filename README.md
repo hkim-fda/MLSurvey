@@ -12,7 +12,7 @@ results. It also supports weighted random forest (**wRandomforest**),
 and weighted XGBoost (**wXGBoost**) with random optimal
 (hyper-)parameter search (*optim_wxgb_para*). Confidential interval
 (*ci_wauc*) for weighted area under the ROC curve (wAUC) is computed by
-bootstrap.\
+bootstrap.
 
 Since all the weighted ML methods are extended by existing algorithms,
 [glmnet](https://github.com/cran/glmnet),
