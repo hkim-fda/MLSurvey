@@ -35,9 +35,9 @@ R-[surVarSel](https://github.com/aiparragirre/svyVarSel).
 
 ## Paper
 
-- Kim H, Rogers P and Wang D (2026). Machine learning models for chronic
-  disease risks using complex survey data: the impact of sample weights.
-  *Front. Digit. Health* 8:1834715. [doi:
+- Kim, H., Rogers, P. and Wang, D. (2026) 'Machine learning models for
+  chronic disease risks using complex survey data: the impact of sample
+  weights', *Front. Digit. Health*, 8:1834715. [doi:
   10.3389/fdgth.2026.1834715](https://doi.org/10.3389/fdgth.2026.1834715)
 
 **Note**: The package is updating for improvement and will be available
