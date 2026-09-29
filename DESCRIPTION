@@ -8,7 +8,6 @@ Description: A package for developing machine learning models by replicate weigh
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
 Imports:
         glmnet,
         ggplot2,
@@ -25,3 +24,4 @@ Suggests:
         RhpcBLASctl,
         patchwork
 LazyData: true       
+Config/roxygen2/version: 8.0.0

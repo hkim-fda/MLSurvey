@@ -2,7 +2,7 @@
 % Please edit documentation in R/wrf.R
 \name{wRandomforest}
 \alias{wRandomforest}
-\title{Weighted Random Forest prediction models for complex survey data}
+\title{Weighted Random Forest prediction models (wRF) for complex survey data}
 \usage{
 wRandomforest(
   data = NULL,
@@ -103,8 +103,9 @@ Note that the selected model is fitted by the original \code{data}, not one of t
 }
 }
 \description{
-A function to fit wRF prediction (linear or logistic) models for complex survey data with sampling weights in the estimation process and
-to select tuning parameters minimizing the weighted error for a selected replicating weights method.  Detailed arguments are referred to in R-\code{\link{randomForest}}.
+A model selection function for fitting wRF (linear or logistic) models for complex survey data with sampling weights
+by a replicating weights method to select optimal tuning parameters by weighted error minimization.
+Detailed arguments are referred to in R-\code{\link{randomForest}}.
 }
 \note{
 \code{final.model} can leverage R-\code{randomForest} functionality for comprehensive data analysis for linear/logistic regression but will be
