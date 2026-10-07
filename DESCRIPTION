@@ -1,6 +1,6 @@
 Package: MLSurvey
 Title: Machine Learning for Complex Survey Data
-Version: 0.0.2.0
+Version: 0.2.0.0
 Authors@R: 
     person("Hyeonju", "Kim", , "hyeonjukm01@gmail.com", role = c("aut", "cre"),
     comment=c(ORCID = "0000-0002-2368-4850"))
@@ -15,6 +15,7 @@ Imports:
         grDevices,
         parallel,
         randomForest,
+        rlang,
         stats,
         survey,
         svyROC,

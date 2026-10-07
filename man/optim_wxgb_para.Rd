@@ -81,8 +81,8 @@ A function to automate an optimal search for (hyper-) parameter via random sampl
 by replicate weights methods, \code{wXGBoost}.  The final model is not estimated (\code{final.model=FALSE}).
 }
 \examples{
- ## Set user defined (hyper-)parameters for random search: 
- custom  <- list(nthread=3, 
+ ## Set user defined (hyper-)parameters for random search:
+ custom  <- list(nthread=3,
                max_depth = 5,
                eta = function() runif(1, 0.05, 0.15),
                subsample = 0.5, # much smaller for large N
@@ -90,23 +90,25 @@ by replicate weights methods, \code{wXGBoost}.  The final model is not estimated
 
   ## search for optimal parameters
  data(nhanes2013_sbc)
- Mydesign <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
-                              nest = TRUE, data = nhanes2013_sbc)
+ Mydesign <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA,
+                     weights = ~WTSAF2YR,nest = TRUE, data = nhanes2013_sbc)
  opt.par<- optim_wxgb_para(nhanes2013_sbc$HBP,2:61,custom,method="dCV",
                            design=Mydesign,print_every_n=250L)
 \dontrun{
  ## fitting the optimal model
- 
+
  ### The data needs to be a sparse matrix without intercept.
  ### Generate a sparse matrix from a regular dataset for training
  unwtData<-nhanes2013_sbc[,-c(62:66)]   #excluding weight related vectors
  Mat<- sparse.model.matrix(HBP~. ,data = unwtdata )[,-1]   #dropping intercept
  wtData <- xgb.DMatrix(data = nhanes2013_sbc,label=nhanes2013_sbc$HBP,
                        weight=nhanes2013_sbc$WTSAF2YR)
- 
- # Can either include test data--it should be a xgb.DMatrix object-- in `evals` with `early_stopping_rounds` for better performance or not.
- wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,early_stopping_rounds=10,
-                evals=list(train=wtData,test=test.data),custom_metric = evalerror.bin, verbose=0)
+
+# Can include test data--it should be a xgb.DMatrix object--
+# in `evals` with `early_stopping_rounds` for better performance.
+ wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,
+           early_stopping_rounds=10,evals=list(train=wtData,test=test.data),
+           custom_metric = evalerror.bin, verbose=0)
 }
 }
 \seealso{

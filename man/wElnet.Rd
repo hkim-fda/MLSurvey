@@ -16,7 +16,7 @@ wElnet(
   lambda = NULL,
   alpha = 1,
   nlambda = 100,
-  lambda.min.ratio = ifelse(nobs < nvars, 0.01, 1e-04),
+  lambda.min.ratio = NULL,
   method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),
   k = 10,
   R = 1,
@@ -53,10 +53,7 @@ wElnet(
 
 \item{nlambda}{An integer.  The number of lambda grids to be generated.  Default is \code{nlambda = 100}.}
 
-\item{lambda.min.ratio}{The smallest value for \code{lambda}. The default depends on the sample size \code{nobs} relative to the number of variables \code{nvars}.
-If \code{nobs> nvars}, the default is \code{0.0001}, close to zero.  If \code{nobs < nvars}, the default is \code{0.01}.
-A very small value of \code{lambda.min.ratio} will lead to a saturated fit in the \code{nobs < nvars} case.
-This is undefined for a \code{"binomial"} model.}
+\item{lambda.min.ratio}{The smallest value for \code{lambda}, as a fraction of the maximum lambda. If \code{NULL} (default), this is computed internally: \code{0.01} if the number of observations is smaller than the number of covariates, otherwise \code{0.0001}. A very small value of \code{lambda.min.ratio} will lead to a saturated fit in the \code{nobs < nvars} case. This is undefined for a \code{"binomial"} model.}
 
 \item{method}{A string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.}
 
@@ -90,6 +87,7 @@ The output object of the function \code{wElnet()} is an object of class \code{w.
 \item \code{average}: A numeric vector indicating the average error for each tuning parameter in \code{lambda$grid}.
 \item \code{all}: A numeric matrix indicating the error of each test set for each tuning parameter.
 }
+\item \code{alpha}: A numeric value of the elastic net mixing parameter used to fit this model (as supplied to the \code{alpha} argument).
 \item \code{model}: A list containing information of two elements in relation to the fitted models.
 \itemize{
 \item \code{grid}: A list containing information on models fitted by each tuning parameter in the \code{lambda$grid}.

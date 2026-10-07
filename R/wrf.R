@@ -2,7 +2,7 @@
 #'
 #'@description A model selection function for fitting wRF (linear or logistic) models for complex survey data with sampling weights
 #'             by a replicating weights method to select optimal tuning parameters by weighted error minimization.
-#'             Detailed arguments are referred to in R-\code{\link{randomForest}}.
+#'             Detailed arguments are referred to in R-[randomForest::randomForest].
 #'
 #' @param data A data frame with information about independent variables, as well as sampling weights and strata and cluster indicators. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
 #' @param y A vector of the response variable. If a factor, classification is assumed, otherwise, regression is assumed. If omitted, randomForest will run in a unsupervised mode.
@@ -26,7 +26,7 @@
 #' @param replace,classwt,cutoff,sampsize,nodesize,maxnodes,importance,proximity,oob.prox,norm.votes,do.trace,keep.forest,corr.bias,keep.inbag,... Optional parameters to be passed to the low level function [randomForest::randomForest()].
 #'
 #'
-#' @seealso [randomForest::randomForest()] for arguments and return values in detail.
+#' @seealso [randomForest::randomForest] for arguments and return values in detail.
 #'
 #' @return The output object of the function \code{wRandomforest()} is an object of class \code{w.randomforest}:
 #' - `mtry`: A list containing information on `mtry` as a tuning parameter (the number of predictors sampled for splitting at each node):

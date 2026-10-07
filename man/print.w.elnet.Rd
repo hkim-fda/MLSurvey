@@ -18,7 +18,7 @@ values. Default is \code{4}.}
 Invisibly returns \code{x}. Called for its side effect of printing to the console.
 }
 \description{
-A short summary of a \code{\link{wElnet}} fit: the alpha used,
+Prints a short summary of a \code{\link{wElnet}} fit: the alpha used,
 the selected \code{lambda.min} and its weighted error, the number
 of nonzero coefficients (degrees of freedom) at that lambda, and the
 size of the lambda grid that was searched.

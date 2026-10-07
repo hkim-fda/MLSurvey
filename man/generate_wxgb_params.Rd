@@ -54,7 +54,7 @@ This function can also be used for \code{\link[xgboost:xgb.train]{xgboost::xgb.t
 para.default<-generate_wxgb_params()
 
 # Force a static max_depth and pass a custom eta sampler
-custom.para<- generate_xgb_params(list(
+custom.para<- generate_wxgb_params(list(
   max_depth = 6,
   eta = function() runif(1, 0.05, 0.15)
 ))

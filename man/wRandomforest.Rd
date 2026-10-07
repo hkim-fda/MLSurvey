@@ -105,7 +105,7 @@ Note that the selected model is fitted by the original \code{data}, not one of t
 \description{
 A model selection function for fitting wRF (linear or logistic) models for complex survey data with sampling weights
 by a replicating weights method to select optimal tuning parameters by weighted error minimization.
-Detailed arguments are referred to in R-\code{\link{randomForest}}.
+Detailed arguments are referred to in R-\link[randomForest:randomForest]{randomForest::randomForest}.
 }
 \note{
 \code{final.model} can leverage R-\code{randomForest} functionality for comprehensive data analysis for linear/logistic regression but will be
@@ -136,5 +136,5 @@ dcv.rf <- wRandomforest(y = as.factor(nhanes2013_sbc$HBP), col.x = 2:61, design 
 
 }
 \seealso{
-\code{\link[randomForest:randomForest]{randomForest::randomForest()}} for arguments and return values in detail.
+\link[randomForest:randomForest]{randomForest::randomForest} for arguments and return values in detail.
 }

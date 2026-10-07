@@ -68,7 +68,7 @@ weighted mean error (\code{\link[=evalerror_bin]{evalerror_bin()}}) for logistic
 \item{print_every_n}{Print each n-th iteration evaluation messages when verbose>0. Default is \code{1} printing all messages. This parameter is passed to the \code{cb.print.evaluation} callback.}
 
 \item{maximize}{If \code{early_stopping_rounds} is set, then this parameter must be set as well. Default is \code{FALSE} since the weighted loss function is used for minimization.
-This parameter is passed to the \code{\link[xgboost]{cb.early.stop}} callback.}
+This parameter is passed to the \code{xgboost::cb.early.stop} callback.}
 
 \item{early_stopping_rounds}{\code{NULL} does not trigger the early stopping function. Setting to an integer k will stop training with a validation set unless the performance improve for k rounds.  Setting this parameter engages the \code{cb.early.stop} callback.}
 
@@ -95,7 +95,7 @@ This parameter is passed to the \code{\link[xgboost]{cb.early.stop}} callback.}
 
 \item{wxgb_model}{A previously built model to continue the training from. Could be either an object of class \code{xgb.Booster}, i.e., \code{final.model} from the object of class \code{w.xgboost}, its raw data, or the name of a file with a previously saved model.}
 
-\item{callbacks}{A list of callback functions to perform various task during boosting. See \code{\link[xgboost]{callbacks}}. Some of the callbacks are automatically created depending on the parameters’ values.
+\item{callbacks}{A list of callback functions to perform various task during boosting. See \code{xgboost::callbacks}. Some of the callbacks are automatically created depending on the parameters’ values.
 Users can provide either existing or their own callback methods in order to customize the training process.}
 }
 \value{
@@ -123,7 +123,7 @@ When \code{test.data} is provided, the final model is fitted by evaluating model
 \description{
 A model selection function for fitting XGBoost (linear or logistic) models for complex survey data with sampling weights
 by a replicating weights method to select optimal tuning parameters by weighted error minimization.
-Detailed arguments are referred to in R-\code{\link{xgboost}}.
+Detailed arguments are referred to in R-\code{\link[xgboost:xgboost]{xgboost::xgboost()}}.
 }
 \note{
 \code{final.model} can leverage R-\code{xgboost} functionality for comprehensive data analysis for linear/logistic regression but will be
@@ -145,11 +145,13 @@ param <- list(objective = "binary:logistic", max_depth = sample(4:8, 1),
              colsample_bytree = runif(1, .5, .8),
              min_child_weight = sample(1:40, 1),
              max_delta_step = sample(1:10, 1))  # for very imbalanced case
- # Or equivalently, param<- xgb.params(objective = "binary:logistic", max_depth = sample(4:8, 1),...)            
+ # Or equivalently,
+param<- xgboost::xgb.params(objective = "binary:logistic", max_depth = sample(4:8, 1),
+                       subsample = 0.5)
 
 # Variable selection and best iteration (hyper-parameter) selection:
-# Can add a xgb.DMatrix object of test data (`test.data`) to the function to obtain predicted values 
-  from the final model after extra evaluation with it.
+# Can add a xgb.DMatrix object of test data (`test.data`) to the function
+# to obtain predicted values from the final model after extra evaluation with it.
 xgb.cv <- wXGBoost(data = nhanes2013_sbc,
               y = nhanes2013_sbc$HBP, col.x = 2:61,
               cluster = "SDMVPSU", strata = "SDMVSTRA", weights = "WTSAF2YR",

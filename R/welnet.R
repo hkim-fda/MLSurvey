@@ -15,10 +15,7 @@
 #' @param family A string indicating a \code{glm} family object for fitting weighted elastic net models. Choose between \code{gaussian} (to fit linear models) or \code{binomial} (for logistic models).
 #' @param lambda A sequence of lambda supplied by a user.
 #' @param nlambda An integer.  The number of lambda grids to be generated.  Default is \code{nlambda = 100}.
-#' @param lambda.min.ratio The smallest value for \code{lambda}. The default depends on the sample size \code{nobs} relative to the number of variables \code{nvars}.
-#'                         If \code{nobs> nvars}, the default is \code{0.0001}, close to zero.  If \code{nobs < nvars}, the default is \code{0.01}.
-#'                         A very small value of \code{lambda.min.ratio} will lead to a saturated fit in the \code{nobs < nvars} case.
-#'                         This is undefined for a \code{"binomial"} model.
+#' @param lambda.min.ratio The smallest value for \code{lambda}, as a fraction of the maximum lambda. If \code{NULL} (default), this is computed internally: \code{0.01} if the number of observations is smaller than the number of covariates, otherwise \code{0.0001}. A very small value of \code{lambda.min.ratio} will lead to a saturated fit in the \code{nobs < nvars} case. This is undefined for a \code{"binomial"} model.
 #' @param standardize,offset,... Optional parameters to be passed to the low level function [glmnet::glmnet()].
 #' @param alpha A numeric value of the elastic net mixing parameter \deqn{0 \le \alpha \le 1,} where \code{alpha = 1} for the LASSO penalty, and \code{alpha = 0} for the Ridge penalty.
 #' @param method A string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
@@ -43,6 +40,7 @@
 #' - `error`: A list containing information of two elements:
 #'   - `average`: A numeric vector indicating the average error for each tuning parameter in \code{lambda$grid}.
 #'   - `all`: A numeric matrix indicating the error of each test set for each tuning parameter.
+#' - `alpha`: A numeric value of the elastic net mixing parameter used to fit this model (as supplied to the `alpha` argument).
 #' - `model`: A list containing information of two elements in relation to the fitted models.
 #'   - `grid`: A list containing information on models fitted by each tuning parameter in the \code{lambda$grid}.
 #'     - `a0`: A numeric vector of model intercepts across the whole grid of tuning parameters (hence, of the same length as \code{lambda$grid}).
@@ -81,7 +79,7 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
                    cluster = NULL, strata = NULL, weights = NULL, design = NULL,
                    family = c("gaussian", "binomial"),
                    lambda = NULL, alpha = 1,
-                   nlambda=100,lambda.min.ratio = ifelse(nobs < nvars, 0.01, 1e-04),
+                   nlambda = 100, lambda.min.ratio = NULL,
                    method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),
                    k = 10, R = 1, B = 200,
                    dCV.sw.test = FALSE,
@@ -142,6 +140,17 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
     data <- get(design$call$data)
   }
 
+  # Step 0b: Resolve lambda.min.ratio default now that 'data' and 'col.x'
+  # are both guaranteed to be available (whether supplied directly or
+  # recovered from 'design' above). This mirrors glmnet's own convention:
+  # a smaller min ratio (0.01) when nobs < nvars to avoid a saturated fit,
+  # otherwise a very small ratio (0.0001) close to zero.
+  if(is.null(lambda.min.ratio)){
+    nobs  <- nrow(data)
+    nvars <- length(col.x)
+    lambda.min.ratio <- ifelse(nobs < nvars, 0.01, 1e-04)
+  }
+
 
   # Step 1: Generate replicate weights based on the method
   newdata <- replicate_weights(data = data, method = method,
@@ -157,14 +166,18 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
                                  x = as.matrix(newdata[,col.x]),
                                  weights = as.numeric(newdata[,weights]),
                                  alpha = alpha,
-                                 family = family,...)
+                                 family = family,
+                                 nlambda = nlambda,
+                                 lambda.min.ratio = lambda.min.ratio,
+                                 standardize = standardize, offset = offset,...)
     lambda <- model.orig$lambda
   } else {
     model.orig <- glmnet::glmnet(y = as.numeric(newdata[,col.y]),
                                  x = as.matrix(newdata[,col.x]),
                                  weights = as.numeric(newdata[,weights]),
                                  family = family, alpha = alpha,
-                                 lambda = lambda,...)
+                                 lambda = lambda,
+                                 standardize = standardize, offset = offset,...)
   }
 
   # Step 3: Fit the training models and estimate yhat for units in the sample
@@ -177,7 +190,8 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
                             x = as.matrix(newdata[,col.x]),
                             weights = as.numeric(newdata[,col.w]),
                             lambda = lambda, alpha = alpha,
-                            family = family,...)
+                            family = family,
+                            standardize = standardize, offset = offset,...)
 
     # Sample yhat
     yhat <- predict(model, newx=as.matrix(newdata[,col.x]), type = "response")
@@ -199,7 +213,8 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
                           x = as.matrix(data[,col.x]),
                           weights = data[,weights],
                           lambda = lambda.min, alpha = alpha,
-                          family = family,...)
+                          family = family,
+                          standardize = standardize, offset = offset,...)
 
   result <- list()
   result$lambda <- list(grid = lambda,
@@ -222,10 +237,9 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
 
 }
 
-
 #' Print method for \code{w.elnet} objects (single-alpha \code{wElnet()} output)
 #'
-#' @description A short summary of a \code{\link{wElnet}} fit: the alpha used,
+#' @description Prints a short summary of a \code{\link{wElnet}} fit: the alpha used,
 #'              the selected \code{lambda.min} and its weighted error, the number
 #'              of nonzero coefficients (degrees of freedom) at that lambda, and the
 #'              size of the lambda grid that was searched.
@@ -253,18 +267,17 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
 #'
 #' @export
 print.w.elnet <- function(x, digits = 4, ...){
-
+  
   min.idx    <- which.min(abs(x$lambda$grid - x$lambda$min))
   min.error  <- x$error$average[min.idx]
   min.df     <- x$model$grid$df[min.idx]
-
+  
   cat("Weighted Elastic Net (wElnet)\n\n")
   cat("alpha:            ", signif(x$alpha, digits), "\n")
   cat("lambda (min):     ", signif(x$lambda$min, digits), "\n")
   cat("Weighted error at min:", signif(min.error, digits), "\n")
   cat("Nonzero coefs:    ", min.df, "\n")
   cat("Lambda grid size: ", length(x$lambda$grid), "\n")
-
+  
   invisible(x)
 }
-
