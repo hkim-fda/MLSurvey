@@ -103,8 +103,8 @@ The output object of the function \code{wXGBoost()} is an object of class \code{
 \itemize{
 \item \code{CV.iterations}: A list containing information on tuning parameters, \code{nrounds} of three elements:
 \itemize{
-\item \code{niter.range.per.R}: A matrix of the range of iterations of \code{k}-fold CV by replicate weights for \code{R} replicates
-\item \code{k_fold.best}: A matrix of best iterations, minimizing the average error, for corresponding folds for \code{R} replicates.
+\item \code{niter.range.per.R}: A matrix of the range of iterations of replicate-weight CV for \code{R} replicates.
+\item \code{fold.best}: A list of length \code{R}; each element \code{fold.best[[r]]} is a numeric vector of best iterations (one per fold/replicate-weight column actually produced for replicate \code{r}, minimizing the average error). The length of this vector depends on the selected \code{method} and is \strong{not} fixed at \code{k}: it equals \code{k} itself only for \code{method = "dCV"}; for \code{"JKn"} it equals the number of PSUs; for \code{"bootstrap"}/\code{"subbootstrap"} it equals \code{B}; for \code{"BRR"} it is a power-of-4 count determined internally by \code{survey::as.svrepdesign()}; and for \code{"split"}/\code{"extrapolation"} it is \code{1}. (Named \code{fold.best}, not \code{k_fold.best}, precisely because it is not always a "k-fold" count in this general sense -- \code{k} itself only has meaning for \code{dCV}.)
 \item \code{best_iteration}: An optimal \code{nround} that minimizes mean test error.
 }
 \item \code{CV.eval_log}: A list containing information of two elements:
@@ -123,11 +123,44 @@ When \code{test.data} is provided, the final model is fitted by evaluating model
 \description{
 A model selection function for fitting XGBoost (linear or logistic) models for complex survey data with sampling weights
 by a replicating weights method to select optimal tuning parameters by weighted error minimization.
-Detailed arguments are referred to in R-\code{\link[xgboost:xgboost]{xgboost::xgboost()}}.
+Detailed arguments are referred to in \code{\link[xgboost:xgboost]{xgboost::xgboost()}}.
 }
 \note{
 \code{final.model} can leverage R-\code{xgboost} functionality for comprehensive data analysis for linear/logistic regression but will be
 extensively used for other models, i.e., Cox, Poisson, etc.
+
+\code{method = "bootstrap"} and \code{"subbootstrap"} rely on
+\code{\link{replicate_weights}}'s out-of-bag (OOB) style test weights
+(\code{sw_r_1_test_*} columns): for each of the \code{B} replicates, a
+unit is treated as "test" for that replicate if and only if its PSU was
+not drawn into that resample. The OOB test fraction per replicate is
+therefore random rather than a fixed, predetermined proportion (unlike
+\code{dCV} or \code{split}).
+
+\strong{Breaking change (if upgrading from an earlier version):} the
+\code{result$CV.iterations} field previously named \code{k_fold.best} is
+now named \code{fold.best}, and its contents changed from a pre-sized
+\code{k x R} matrix to a list of length \code{R} (with per-replicate
+vectors whose length depends on \code{method}, not fixed at \code{k}).
+This was a necessary bug fix: the old matrix, pre-sized assuming exactly
+\code{k} folds regardless of \code{method}, either silently corrupted
+results (for \code{split}/\code{extrapolation}, where the real fold count
+is 1, leaving most matrix rows as fake zeros) or crashed with "subscript
+out of bounds" (for \code{JKn}/\code{BRR}/\code{bootstrap}/
+\code{subbootstrap}, where the real fold count is almost always greater
+than the default \code{k=10}). Code that previously read
+\code{fit$CV.iterations$k_fold.best} as a matrix must be updated to read
+\code{fit$CV.iterations$fold.best} as a list, e.g.
+\code{fit$CV.iterations$fold.best[[r]]} for replicate \code{r}'s vector
+of best iterations.
+
+\strong{On the argument \code{k}:} \code{k} denotes the number of folds
+\emph{only} for \code{method = "dCV"} (its only meaningful use, matching
+\code{\link{replicate_weights}}'s own documentation of \code{k}). For every
+other \code{method}, \code{k} is ignored entirely (a message is printed if
+a non-default value is supplied), and the real number of replicate-weight
+columns used internally is determined by the method itself as described
+under \code{fold.best} above.
 }
 \examples{
 

@@ -11,10 +11,13 @@ optim_wxgb_para(
   nitr = 50,
   nfolds = 10,
   R = 1,
+  B = 200,
   nRounds = 10000,
   nstop = 5,
   seed = 120,
   method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),
+  train.prob = 0.7,
+  method.split = c("dCV", "bootstrap", "subbootstrap"),
   missing = NA,
   maximize = FALSE,
   cluster = NULL,
@@ -35,11 +38,13 @@ optim_wxgb_para(
 See also \code{\link[=generate_wxgb_params]{generate_wxgb_params()}}. The complete list of parameters is found on
 \code{\link[xgboost:xgb.train]{xgboost::xgb.train()}} or \url{https://xgboost.readthedocs.io/en/latest/parameter.html}.}
 
-\item{nitr}{The number of iterations in the \code{for}-loop to search for optimal (hyper-) parameters.  Default is \code{100}.}
+\item{nitr}{The number of iterations in the \code{for}-loop to search for optimal (hyper-) parameters.  Default is \code{50}.}
 
-\item{nfolds}{The number of folds to be defined for \code{dCV} method. Default is \code{k=10}.}
+\item{nfolds}{The number of folds to be defined for \code{dCV} method. Default is \code{nfolds=10}.}
 
-\item{R}{The number of times the sample is partitioned for the \code{dCV} method. Default is \code{R=1}.}
+\item{R}{The number of times the sample is partitioned for the \code{dCV}, \code{split}, or \code{extrapolation} methods. Default is \code{R=1}.}
+
+\item{B}{The number of bootstrap re-samples for \code{bootstrap} and \code{subbootstrap} methods. Default is \code{B=200}, matching \code{\link{wXGBoost}}'s own default.}
 
 \item{nRounds}{The maximum number of boosting iterations.}
 
@@ -48,6 +53,10 @@ See also \code{\link[=generate_wxgb_params]{generate_wxgb_params()}}. The comple
 \item{seed}{An integer to set the seed for random parameter reproducibility.  This is not for \code{wXGBoost()} implementation but for \code{generate_wxgb_params()}.}
 
 \item{method}{A character string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.}
+
+\item{train.prob}{A numeric between 0 and 1, indicating the proportion of clusters (for the method \code{split}) or strata (for the method \code{extrapolation}) to be set in the training sets. Default is \code{train.prob = 0.7}, matching \code{\link{wXGBoost}}'s own default. Only applies to \code{split} and \code{extrapolation} methods.}
+
+\item{method.split}{A string of one the following replicate weights methods to be implemented under the \code{split} in the \code{method} argument: \code{dCV}, \code{bootstrap} or \code{subbootstrap}. Default is \code{"dCV"}, matching \code{\link{wXGBoost}}'s own default. Only applies to the \code{split} method.}
 
 \item{missing}{Default is set to \code{NA}, which means that \code{NA} values should be considered as 'missing' by the algorithm.  Sometimes, \code{0} or other extreme values might be used to represent missing values. This parameter is only used when input is a dense matrix.}
 
@@ -94,21 +103,25 @@ by replicate weights methods, \code{wXGBoost}.  The final model is not estimated
                      weights = ~WTSAF2YR,nest = TRUE, data = nhanes2013_sbc)
  opt.par<- optim_wxgb_para(nhanes2013_sbc$HBP,2:61,custom,method="dCV",
                            design=Mydesign,print_every_n=250L)
+
+ ## search using bootstrap instead, with a custom B:
+ opt.par.boot <- optim_wxgb_para(nhanes2013_sbc$HBP,2:61,custom,method="bootstrap",
+                           B = 50, design=Mydesign,print_every_n=250L)
 \dontrun{
  ## fitting the optimal model
 
  ### The data needs to be a sparse matrix without intercept.
  ### Generate a sparse matrix from a regular dataset for training
  unwtData<-nhanes2013_sbc[,-c(62:66)]   #excluding weight related vectors
- Mat<- sparse.model.matrix(HBP~. ,data = unwtdata )[,-1]   #dropping intercept
+ Mat<- sparse.model.matrix(HBP~. ,data = unwtData )[,-1]   #dropping intercept
  wtData <- xgb.DMatrix(data = nhanes2013_sbc,label=nhanes2013_sbc$HBP,
                        weight=nhanes2013_sbc$WTSAF2YR)
 
 # Can include test data--it should be a xgb.DMatrix object--
 # in `evals` with `early_stopping_rounds` for better performance.
- wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,
+ wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.par$nrounds,
            early_stopping_rounds=10,evals=list(train=wtData,test=test.data),
-           custom_metric = evalerror.bin, verbose=0)
+           custom_metric = evalerror_bin, verbose=0)
 }
 }
 \seealso{

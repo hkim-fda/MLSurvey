@@ -10,12 +10,15 @@
 #'                    See also [generate_wxgb_params()]. The complete list of parameters is found on
 #'                     [xgboost::xgb.train()] or \url{https://xgboost.readthedocs.io/en/latest/parameter.html}.
 #' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were added to the \code{design} argument.
-#' @param nitr The number of iterations in the \code{for}-loop to search for optimal (hyper-) parameters.  Default is `100`.
-#' @param nfolds The number of folds to be defined for \code{dCV} method. Default is \code{k=10}.
-#' @param R The number of times the sample is partitioned for the \code{dCV} method. Default is \code{R=1}.
+#' @param nitr The number of iterations in the \code{for}-loop to search for optimal (hyper-) parameters.  Default is `50`.
+#' @param nfolds The number of folds to be defined for \code{dCV} method. Default is \code{nfolds=10}.
+#' @param R The number of times the sample is partitioned for the \code{dCV}, \code{split}, or \code{extrapolation} methods. Default is \code{R=1}.
+#' @param B The number of bootstrap re-samples for \code{bootstrap} and \code{subbootstrap} methods. Default is \code{B=200}, matching \code{\link{wXGBoost}}'s own default.
 #' @param nRounds The maximum number of boosting iterations.
 #' @param missing Default is set to `NA`, which means that `NA` values should be considered as 'missing' by the algorithm.  Sometimes, `0` or other extreme values might be used to represent missing values. This parameter is only used when input is a dense matrix.
 #' @param method A character string indicating a method of replicate weights. Choose one of these: \code{JKn}, \code{dCV}, \code{bootstrap}, \code{subbootstrap}, \code{BRR}, \code{split}, \code{extrapolation}.
+#' @param train.prob A numeric between 0 and 1, indicating the proportion of clusters (for the method \code{split}) or strata (for the method \code{extrapolation}) to be set in the training sets. Default is \code{train.prob = 0.7}, matching \code{\link{wXGBoost}}'s own default. Only applies to \code{split} and \code{extrapolation} methods.
+#' @param method.split A string of one the following replicate weights methods to be implemented under the \code{split} in the \code{method} argument: \code{dCV}, \code{bootstrap} or \code{subbootstrap}. Default is \code{"dCV"}, matching \code{\link{wXGBoost}}'s own default. Only applies to the \code{split} method.
 #' @param nstop \code{NULL} does not trigger the early stopping function. Setting to an integer k will stop training with a validation set unless the performance improve for k rounds.  Setting this parameter engages the `cb.early.stop` callback.
 #' @param seed An integer to set the seed for random parameter reproducibility.  This is not for `wXGBoost()` implementation but for `generate_wxgb_params()`.
 #' @param maximize If \code{nstop} is set, then this parameter must be set as well. Default is `FALSE` since the weighted loss function is used for minimization. This parameter is passed to the cb.early.stop callback.
@@ -49,27 +52,34 @@
 #'                      weights = ~WTSAF2YR,nest = TRUE, data = nhanes2013_sbc)
 #'  opt.par<- optim_wxgb_para(nhanes2013_sbc$HBP,2:61,custom,method="dCV",
 #'                            design=Mydesign,print_every_n=250L)
+#'
+#'  ## search using bootstrap instead, with a custom B:
+#'  opt.par.boot <- optim_wxgb_para(nhanes2013_sbc$HBP,2:61,custom,method="bootstrap",
+#'                            B = 50, design=Mydesign,print_every_n=250L)
 #' \dontrun{
 #'  ## fitting the optimal model
 #'
 #'  ### The data needs to be a sparse matrix without intercept.
 #'  ### Generate a sparse matrix from a regular dataset for training
 #'  unwtData<-nhanes2013_sbc[,-c(62:66)]   #excluding weight related vectors
-#'  Mat<- sparse.model.matrix(HBP~. ,data = unwtdata )[,-1]   #dropping intercept
+#'  Mat<- sparse.model.matrix(HBP~. ,data = unwtData )[,-1]   #dropping intercept
 #'  wtData <- xgb.DMatrix(data = nhanes2013_sbc,label=nhanes2013_sbc$HBP,
 #'                        weight=nhanes2013_sbc$WTSAF2YR)
 #'
 #' # Can include test data--it should be a xgb.DMatrix object--
 #' # in `evals` with `early_stopping_rounds` for better performance.
-#'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.para$nrounds,
+#'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.par$nrounds,
 #'            early_stopping_rounds=10,evals=list(train=wtData,test=test.data),
-#'            custom_metric = evalerror.bin, verbose=0)
+#'            custom_metric = evalerror_bin, verbose=0)
 #'}
 #' @export
-optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,nRounds=10000,nstop=5,seed= 120,
+optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,B=200,nRounds=10000,nstop=5,seed= 120,
                           method = c("dCV", "JKn", "bootstrap", "subbootstrap", "BRR", "split", "extrapolation"),
+                          train.prob = 0.7, method.split = c("dCV", "bootstrap", "subbootstrap"),
                           missing = NA, maximize=FALSE,cluster = NULL, strata = NULL, weights = NULL,
                           design = NULL,data=NULL,print_every_n=50L,...){
+
+  method.split <- match.arg(method.split)
 
   # Step 0: Notation
   if(!is.null(design)){
@@ -98,7 +108,8 @@ optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,nR
                                    params = param, nrounds=nRounds, verbose = 0, print_every_n = print_every_n,
                                    early_stopping_rounds = nstop, final.model=FALSE,
                                    method = method,maximize=maximize,
-                                   k = nfolds, R = R, dCV.sw.test = FALSE,
+                                   k = nfolds, R = R, B = B, dCV.sw.test = FALSE,
+                                   train.prob = train.prob, method.split = method.split,
                                    print.rw = FALSE, save_period = NULL, save_name = "wxgboost.model",
                                     callbacks = list())}, error = function(e) {
                                       # This prints the specific error message to your console

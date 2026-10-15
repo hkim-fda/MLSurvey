@@ -2,7 +2,7 @@
 #'
 #'@description A model selection function for fitting XGBoost (linear or logistic) models for complex survey data with sampling weights
 #'             by a replicating weights method to select optimal tuning parameters by weighted error minimization.
-#'             Detailed arguments are referred to in R-[xgboost::xgboost()].
+#'             Detailed arguments are referred to in [xgboost::xgboost()].
 #'
 #' @param data A data frame with information about the response variable and covariates, as well as sampling weights, strata, and cluster indicators. It could be \code{NULL} if the sampling design were plugged into the \code{design} argument.
 #' @param y A vector of response variable.
@@ -46,8 +46,8 @@
 #'
 #' @return The output object of the function \code{wXGBoost()} is an object of class \code{w.xgboost}:
 #' - `CV.iterations`: A list containing information on tuning parameters, `nrounds` of three elements:
-#'   - `niter.range.per.R`: A matrix of the range of iterations of `k`-fold CV by replicate weights for `R` replicates
-#'   - `k_fold.best`: A matrix of best iterations, minimizing the average error, for corresponding folds for `R` replicates.
+#'   - `niter.range.per.R`: A matrix of the range of iterations of replicate-weight CV for `R` replicates.
+#'   - `fold.best`: A list of length `R`; each element \code{fold.best[[r]]} is a numeric vector of best iterations (one per fold/replicate-weight column actually produced for replicate `r`, minimizing the average error). The length of this vector depends on the selected \code{method} and is **not** fixed at \code{k}: it equals \code{k} itself only for \code{method = "dCV"}; for \code{"JKn"} it equals the number of PSUs; for \code{"bootstrap"}/\code{"subbootstrap"} it equals \code{B}; for \code{"BRR"} it is a power-of-4 count determined internally by \code{survey::as.svrepdesign()}; and for \code{"split"}/\code{"extrapolation"} it is \code{1}. (Named \code{fold.best}, not \code{k_fold.best}, precisely because it is not always a "k-fold" count in this general sense -- \code{k} itself only has meaning for \code{dCV}.)
 #'   - `best_iteration`: An optimal `nround` that minimizes mean test error.
 #' - `CV.eval_log`: A list containing information of two elements:
 #'   - `CV`: A matrix of iteration-wise mean and sd for training and test sets, respectively.
@@ -62,6 +62,42 @@
 #' @note
 #' `final.model` can leverage R-\code{xgboost} functionality for comprehensive data analysis for linear/logistic regression but will be
 #' extensively used for other models, i.e., Cox, Poisson, etc.
+#'
+#' @note
+#' \code{method = "bootstrap"} and \code{"subbootstrap"} rely on
+#' \code{\link{replicate_weights}}'s out-of-bag (OOB) style test weights
+#' (\code{sw_r_1_test_*} columns): for each of the \code{B} replicates, a
+#' unit is treated as "test" for that replicate if and only if its PSU was
+#' not drawn into that resample. The OOB test fraction per replicate is
+#' therefore random rather than a fixed, predetermined proportion (unlike
+#' \code{dCV} or \code{split}).
+#'
+#' @note
+#' \strong{Breaking change (if upgrading from an earlier version):} the
+#' \code{result$CV.iterations} field previously named \code{k_fold.best} is
+#' now named \code{fold.best}, and its contents changed from a pre-sized
+#' \code{k x R} matrix to a list of length \code{R} (with per-replicate
+#' vectors whose length depends on \code{method}, not fixed at \code{k}).
+#' This was a necessary bug fix: the old matrix, pre-sized assuming exactly
+#' \code{k} folds regardless of \code{method}, either silently corrupted
+#' results (for \code{split}/\code{extrapolation}, where the real fold count
+#' is 1, leaving most matrix rows as fake zeros) or crashed with "subscript
+#' out of bounds" (for \code{JKn}/\code{BRR}/\code{bootstrap}/
+#' \code{subbootstrap}, where the real fold count is almost always greater
+#' than the default \code{k=10}). Code that previously read
+#' \code{fit$CV.iterations$k_fold.best} as a matrix must be updated to read
+#' \code{fit$CV.iterations$fold.best} as a list, e.g.
+#' \code{fit$CV.iterations$fold.best[[r]]} for replicate \code{r}'s vector
+#' of best iterations.
+#'
+#' @note
+#' \strong{On the argument \code{k}:} \code{k} denotes the number of folds
+#' \emph{only} for \code{method = "dCV"} (its only meaningful use, matching
+#' \code{\link{replicate_weights}}'s own documentation of \code{k}). For every
+#' other \code{method}, \code{k} is ignored entirely (a message is printed if
+#' a non-default value is supplied), and the real number of replicate-weight
+#' columns used internally is determined by the method itself as described
+#' under \code{fold.best} above.
 #'
 #' @examples
 #'
@@ -177,7 +213,20 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,final.model
   mat<- as.matrix(data[,col.x])
 
   xgb_model <- NULL
-  Niter<-NULL; Niter.max<-NULL; k.fold.best.iter<-matrix(0,nrow=k,ncol = R)
+  Niter<-NULL; Niter.max<-NULL
+  # fold.best.iter is a list (length R), not a pre-sized matrix: the
+  # number of folds/replicate-weight columns actually produced per
+  # replicate 'r' depends on the selected method (k for dCV, number of
+  # PSUs for JKn, B for bootstrap/subbootstrap, a power-of-4 count for
+  # BRR, 1 for split/extrapolation) and is not necessarily equal to the
+  # 'k' argument, which is specific to dCV's fold count. A matrix
+  # pre-sized with nrow = k would silently corrupt output (when the real
+  # fold count < k) or error with "subscript out of bounds" (when the
+  # real fold count > k, e.g. almost always true for JKn/BRR/bootstrap).
+  # Named fold.best (not k_fold.best) since it does not represent a
+  # "k-fold" count in this general sense -- 'k' itself is only meaningful
+  # for method = "dCV".
+  fold.best.iter <- list()
   k.fold.error <- list();
 
   #attach eval.nonpara.R for testing measure
@@ -198,7 +247,13 @@ for (r in 1:R){
     rwtraincols <- grep(paste0("r_",r,"_train"), colnames(newdata))
     rwtestcols <- grep(paste0("r_",r,"_test"),names(newdata))
     eval.log<-list();total.iter <- NULL;
-  for(k.w in 1: length(rwtraincols)){
+
+    # Actual fold/replicate count for this r, used throughout instead of
+    # the dCV-specific 'k' argument.
+    n.folds <- length(rwtraincols)
+    fold.best.iter[[r]] <- numeric(n.folds)
+
+  for(k.w in 1:n.folds){
 
       #generate supporting type data
       dtrain<- xgb.DMatrix(data = mat, label = y, weight = newdata[,rwtraincols[k.w]], nthread = params$nthread, missing = missing)
@@ -217,18 +272,21 @@ for (r in 1:R){
 
 
     # if(!is.null(early_stopping_rounds)){
-        k.fold.best.iter[k.w,r] <- attributes(model)$early_stop$best_iteration
+        fold.best.iter[[r]][k.w] <- attributes(model)$early_stop$best_iteration
         total.iter <- c(total.iter,dim(attributes(model)$evaluation_log)[1])
       # } else{ total.iter <- model$niter
       # }
 
   }
-    #find min error per r to pick best nrounds from k-fold cv
+    #find min error per r to pick best nrounds from the replicate-weight CV
 
     min.niter<- min(total.iter)
       train.eval<- NULL
       test.eval <- NULL
-    for (j in 1:k){
+    # Use the actual number of folds produced for this replicate
+    # (length(eval.log), == n.folds above), not the 'k' argument -- see
+    # note on k.fold.best.iter above for why this must not be hardcoded.
+    for (j in 1:n.folds){
           train.eval <- cbind(train.eval,eval.log[[j]][1:min.niter,2])
           test.eval <- cbind(test.eval,eval.log[[j]][1:min.niter,3])
     }
@@ -259,11 +317,15 @@ for (r in 1:R){
      #generate supporting data type
     dtrain<- xgb.DMatrix(data = mat, label = y, weight = data[,weights],nthread = params$nthread, missing=missing )
 
+    # Always include at least 'train' in eval.list. This ensures 'evals' is
+    # never empty -- required by xgboost whenever early_stopping_rounds is
+    # non-NULL. We also disable early stopping for this final fit below,
+    # since nrounds = best_iter was already determined to be optimal by the
+    # replicate-weights CV above; there is nothing left to "stop early" on,
+    # and re-enabling it here could only truncate training before best_iter.
     if(is.null(test.data)){
-      eval.list<- list(train=dtrain)
+      eval.list<- list(train = dtrain)
     }else{ #!is.null(test.data) case:
-      # mat1<- as.matrix(test.data[,col.x])
-      # dtest<- xgb.DMatrix(data = mat1, label = y, weight = test.data[,weights], nthread = params$nthread, missing=missing)
       eval.list <-list(train=dtrain,test=test.data)
        }
 
@@ -274,13 +336,8 @@ for (r in 1:R){
                               save_period = save_period, save_name = save_name,
                                callbacks = list())
 
-    # yhat <- predict(model, newdata=mat,iterationrange = c(1,best_iter+1))
-
     if(is.null(test.data)){
       yhat <- predict(model, newdata=dtrain)
-      # if(params$objective == "binary:logistic"){
-      #   yhat <- ifelse(yhat>0.5,1,0)
-      # }
     }else{
       yhat<-list(train = predict(model, newdata=dtrain),
                  test = predict(model, newdata=test.data) )
@@ -289,7 +346,7 @@ for (r in 1:R){
  }
   result <- list()
   result$CV.iterations <- list(niter.range.per.R = rbind(Niter,Niter.max),
-                               k_fold.best=k.fold.best.iter,
+                               fold.best=fold.best.iter,
                                best_iteration = best_iter)
   result$CV.eval_log <- list(CV = Eval.log,
                              Best_iteration =  Eval.log[best_iter,])

@@ -12,7 +12,16 @@ error.f <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
   if(method %in% c("bootstrap", "subbootstrap")){
     R <- 1
     k <- B
-    weights.name <- weights
+    # initial.name is "sw" because replicate_weights() generates
+    # out-of-bag (OOB) test weight columns for bootstrap/subbootstrap using
+    # the same "sw_r_1_test_*" naming convention as JKn (a unit's original
+    # sampling weight is assigned to the test column iff that unit's PSU
+    # was NOT drawn into the given replicate; 0 otherwise). weights.name is
+    # NOT fixed here to the plain 'weights' column -- it must be
+    # reconstructed per-fold below (see the loop), exactly like JKn/dCV/BRR,
+    # so that each of the B replicates' error is computed against its own
+    # OOB held-out units rather than against the entire original sample.
+    initial.name <- "sw"
     cv.error.ind <- FALSE
   }
 
@@ -53,7 +62,14 @@ error.f <- function(data, l.yhat, method, cv.error.ind = c(TRUE, FALSE),
         yhat.name <- paste0("yhat_rw_r_",r,"_train_",kk)
       }
 
-      if(method %in% c("JKn", "dCV", "BRR")){
+      # Reconstruct weights.name per-fold for every method that has genuine
+      # fold-specific OOB/held-out test weights. This now includes
+      # bootstrap/subbootstrap -- previously omitted here, which caused
+      # weights.name to remain fixed at the plain full-sample 'weights'
+      # column for all B replicates, silently computing error against the
+      # entire original sample instead of each replicate's actual held-out
+      # (OOB) units.
+      if(method %in% c("JKn", "dCV", "BRR", "bootstrap", "subbootstrap")){
         weights.name <- paste0(initial.name, "_r_",r,"_test_",kk)
       }
 
@@ -120,4 +136,3 @@ loss.f <- function(y.est, y, family = c("gaussian","binomial")){
   return(l)
 
 }
-

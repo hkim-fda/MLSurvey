@@ -39,12 +39,16 @@
 #'                              rw.test = TRUE)
 #'
 #' ## subbootstrap ------------------------------------------------------------
+#' # rw.test = TRUE now also returns out-of-bag ("sw_r_1_test_*") weights:
+#' # units whose PSU was not drawn into a given replicate (resample multiplier
+#' # == 0) are treated as that replicate's held-out test set.
 #' data_rw <- replicate_weights(data = nhanes2013_sbc,
 #'                              method = "subbootstrap",
 #'                              cluster = "SDMVPSU",
 #'                              strata = "SDMVSTRA",
 #'                              weights = "WTSAF2YR",
-#'                              B = 100)
+#'                              B = 100,
+#'                              rw.test = TRUE)
 #'
 #' ## BRR ---------------------------------------------------------------------
 #' data_rw <- replicate_weights(data = nhanes2013_sbc,
@@ -97,7 +101,15 @@
 #' For other methods, `fold` or `set` for each unit respectively labeled as \code{fold_t} or \code{set_t}
 #' is included in each partition depending on the method in a data set.
 #'
-#'
+#' For \code{JKn}, \code{bootstrap}, and \code{subbootstrap}, the \code{sw_r_1_test_*} test
+#' columns (generated when \code{rw.test = TRUE}) represent an out-of-bag (OOB) style test
+#' set: for each replicate, a unit's original sampling weight is assigned to the test column
+#' if and only if that unit's PSU was not drawn into that particular replicate (resample
+#' multiplier of exactly 0), and 0 otherwise. For \code{bootstrap}/\code{subbootstrap}
+#' specifically, this means the OOB test fraction per replicate is random and not fixed in
+#' advance -- in expectation roughly \eqn{1/e \approx 37\%} of PSUs are held out per
+#' replicate for ordinary bootstrap, somewhat more for subbootstrap -- rather than a
+#' predetermined split proportion as in \code{dCV} or \code{split}.
 #'
 #'
 #' @export
@@ -244,8 +256,23 @@ replicate_weights <- function(data,
 
       }
 
-      # Define each unit as fold in JKn method
-      if(method == "JKn" & rw.test == TRUE){
+      # Define each unit as out-of-bag (OOB) test weight for JKn, bootstrap,
+      # and subbootstrap. This is the same zero/nonzero inversion of
+      # mat.repw.ind for all three methods: wherever a unit's PSU was NOT
+      # drawn into a given replicate (resample multiplier == 0), that unit's
+      # original sampling weight becomes its test weight for that replicate;
+      # everywhere else the test weight is 0.
+      #
+      # For bootstrap/subbootstrap specifically, this generalizes the
+      # existing JKn-only logic below: as.svrepdesign(type="bootstrap"/
+      # "subbootstrap") already produces the resample-multiplier matrix
+      # (mat.repw.ind) needed for this, it was simply never used to build a
+      # held-out test set previously. Without this block, functions such as
+      # wElnet()/wXGBoost()/wRandomforest() that expect paired "_train_"/
+      # "_test_" columns for every replicate-weight method would fail (or
+      # silently misbehave) whenever method = "bootstrap" or "subbootstrap"
+      # was selected directly (as opposed to nested under method = "split").
+      if(method %in% c("JKn", "bootstrap", "subbootstrap") & rw.test == TRUE){
 
         mat.repw.test <- -mat.repw.ind
         mat.repw.test[which(mat.repw.test==0)] <- 1
@@ -625,4 +652,3 @@ split_strata <- function(data, train.prob, strata = NULL, weights, R = 1, rw.tes
   return(data)
 
 }
-
