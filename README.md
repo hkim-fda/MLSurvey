@@ -1,12 +1,16 @@
 # MLSurvey
 
 ## *M*achine *L*earning for Complex *S*urvey Data
+<!-- badges: start -->
+[![R-CMD-check](https://github.com/hkim-fda/MLsurvey/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hkim-fda/MLsurvey/actions/workflows/R-CMD-check.yaml)
+<!-- badges: end -->
+
 
 **MLSurvey** is a R-package to develop Machine Learning models for
-complex survey data using appropriate Cross-Validation methods:
+complex survey data using suitable Cross-Validation methods:
 replicate weights methods. This ML tool currently offers weighted
-Elastic Net (**wElnet**) by single $\alpha$, its parallelized version
-(**par_wElnet**) of a sequence of $\alpha$'s, generic plots (*plot*) and
+Elastic Net (**wElnet**) for a single $\alpha$, its CPU parallel computing
+(**par_wElnet**) for a sequence of $\alpha$'s, generic plots (*plot*) and
 ggplot2 supported counterparts (*autoplot*) for both computation
 results. It also supports weighted random forest (**wRandomforest**),
 and weighted XGBoost (**wXGBoost**) with random optimal
@@ -18,11 +22,11 @@ Since all the weighted ML methods are extended by existing algorithms,
 [glmnet](https://github.com/cran/glmnet),
 [xgboost](https://github.com/dmlc/xgboost/tree/master), and
 [randomForest](https://www.stat.berkeley.edu/~breiman/RandomForests/),
-the final models can take advantage of their corresponding original
+ final models can benefit the functionality of corresponding original
 packages to get more comprehensive results, such as importance plots,
 prediction, etc. *NOTE* : The package is developed for linear/logistic
-regression. For the other models where parent packages support, the
-weighted counterparts can be further developed depending on demand.
+regression. For other models supported by their parent packages, the
+weighted counterparts can be developed depending on demand.
 
 FYI, all weighted performance metrics-- `wAUC`, `wROC`, `wSensitivity`,
 and `wSpecificity`--can be computed by
@@ -39,9 +43,6 @@ R-[surVarSel](https://github.com/aiparragirre/svyVarSel).
   chronic disease risks using complex survey data: the impact of sample
   weights', *Front. Digit. Health*, 8:1834715. [doi:
   10.3389/fdgth.2026.1834715](https://doi.org/10.3389/fdgth.2026.1834715)
-
-**Note**: The package is updating for improvement and will be available
-soon!
 
 ## Installation
 

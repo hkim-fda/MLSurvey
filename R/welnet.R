@@ -137,7 +137,14 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
     }
     strata <- as.character(design$call$strata[2])
     weights <- as.character(design$call$weights[2])
-    data <- get(design$call$data)
+    # Use design$variables (the data frame survey::svydesign() already
+    # stores internally) rather than get(design$call$data). The latter
+    # requires re-evaluating a symbol back in whatever environment this
+    # function happens to be called from, which is fragile and breaks
+    # under a properly installed package namespace (e.g. during
+    # devtools::check() or R CMD check) even though it may appear to work
+    # under devtools::load_all()'s looser scoping.
+    data <- design$variables
   }
 
   # Step 0b: Resolve lambda.min.ratio default now that 'data' and 'col.x'
@@ -267,17 +274,17 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
 #'
 #' @export
 print.w.elnet <- function(x, digits = 4, ...){
-  
+
   min.idx    <- which.min(abs(x$lambda$grid - x$lambda$min))
   min.error  <- x$error$average[min.idx]
   min.df     <- x$model$grid$df[min.idx]
-  
+
   cat("Weighted Elastic Net (wElnet)\n\n")
   cat("alpha:            ", signif(x$alpha, digits), "\n")
   cat("lambda (min):     ", signif(x$lambda$min, digits), "\n")
   cat("Weighted error at min:", signif(min.error, digits), "\n")
   cat("Nonzero coefs:    ", min.df, "\n")
   cat("Lambda grid size: ", length(x$lambda$grid), "\n")
-  
+
   invisible(x)
 }

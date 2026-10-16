@@ -154,7 +154,7 @@ wRandomforest <- function(data = NULL, col.x = NULL, y = NULL, xtest=NULL,ytest=
     }
     strata <- as.character(design$call$strata[2])
     weights <- as.character(design$call$weights[2])
-    data <- get(design$call$data)
+    data <- design$variables
   }
   if (is.factor(y)) obj <- "binary:logistic" else obj <- "reg:squarederror"
 

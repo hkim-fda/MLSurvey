@@ -1,6 +1,6 @@
 Package: MLSurvey
 Title: Machine Learning for Complex Survey Data
-Version: 0.2.0.0
+Version: 1.0.0
 Authors@R: 
     person("Hyeonju", "Kim", , "hyeonjukm01@gmail.com", role = c("aut", "cre"),
     comment=c(ORCID = "0000-0002-2368-4850"))
@@ -22,9 +22,12 @@ Imports:
         utils,
         xgboost
 Suggests:
+        knitr,
+        rmarkdown,
         RhpcBLASctl,
         patchwork,
         testthat (>= 3.0.0)
 Config/testthat/edition: 3
 LazyData: true       
 Config/roxygen2/version: 8.0.0
+VignetteBuilder: knitr

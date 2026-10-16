@@ -153,6 +153,31 @@ par_wElnet <- function(alpha = c(0.000, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216
   }
   n.cores <- min(n.cores, n.alpha)  # never spin up more workers than alphas
 
+  # Explicitly force every argument that fit_one_alpha() below will capture
+  # as a closure. Without this, R's lazy evaluation means some arguments
+  # may still be unresolved *promises* (holding an unevaluated expression
+  # plus a pointer back to par_wElnet()'s *caller's* environment) at the
+  # moment parLapply() serializes fit_one_alpha() to a PSOCK worker. If a
+  # promise is shipped unforced, the worker can only resolve it by
+  # re-evaluating that expression in the original caller's environment --
+  # which does not exist on a separate worker process, producing errors
+  # like "object 'col.x' not found" even though col.x was clearly supplied
+  # by the caller. force() converts each argument into a concrete value
+  # bound directly in par_wElnet()'s own execution frame, which IS
+  # correctly captured and serialized along with the closure.
+  #
+  # This is not optional/defensive-only: it was confirmed to cause real
+  # failures under devtools::check() (which loads the package as a properly
+  # installed, namespace-isolated package) even though the same code could
+  # appear to work fine under devtools::load_all()'s looser scoping.
+  force(data); force(col.y); force(col.x)
+  force(cluster); force(strata); force(weights); force(design)
+  force(family); force(lambda); force(nlambda); force(lambda.min.ratio)
+  force(method); force(k); force(R); force(B); force(dCV.sw.test)
+  force(train.prob); force(method.split); force(print.rw)
+  force(standardize); force(offset)
+
+
   # --- Always PSOCK, on every platform -----------------------------------
   # Safe to run inside RStudio on Windows, Mac, and Linux alike: PSOCK
   # workers are independent fresh R processes, so forking the RStudio

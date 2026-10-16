@@ -89,7 +89,7 @@ optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,B=
     }
     strata <- as.character(design$call$strata[2])
     weights <- as.character(design$call$weights[2])
-    data <- get(design$call$data)
+    data <- design$variables
   }
 
   # for reproducibility

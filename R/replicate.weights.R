@@ -169,7 +169,7 @@ replicate_weights <- function(data,
     }
     strata <- as.character(design$call$strata[2])
     weights <- as.character(design$call$weights[2])
-    data <- get(design$call$data)
+    data <- design$variables
   }
 
 

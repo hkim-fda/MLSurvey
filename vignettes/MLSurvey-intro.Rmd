@@ -1,0 +1,225 @@
+---
+title: "Getting Started with MLSurvey"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting Started with MLSurvey}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4
+)
+```
+
+## Overview
+
+`MLSurvey` fits machine learning models -- elastic net, XGBoost, and random
+forest -- to complex survey data, incorporating sampling weights, strata, and
+clusters via a replicate-weights approach. This vignette walks through the
+core elastic net workflow:
+
+1. Fitting a single model with `wElnet()`
+2. Searching across multiple `alpha` values in parallel with `par_wElnet()`
+3. Visualizing results with both base R and `ggplot2`
+
+To keep this vignette fast and self-contained, we use a small synthetic
+survey-style data set rather than a real NHANES extract. The same workflow
+applies directly to real survey data with a `cluster`, `strata`, and
+`weights` column (or an equivalent `survey::svydesign()` object).
+
+```{r setup}
+library(MLSurvey)
+```
+
+## A small synthetic survey data set
+
+A complex survey data set typically includes:
+
+- A **cluster** identifier (primary sampling unit, PSU)
+- A **strata** identifier
+- A **sampling weight**
+- One or more **predictors**
+- A **response variable**
+
+```{r make-data}
+set.seed(1)
+n <- 240
+
+survey_data <- data.frame(
+  psu     = rep(rep(1:3, each = n / 12), times = 4),
+  strata  = rep(1:4, each = n / 4),
+  weight  = runif(n, 500, 5000),
+  x1 = rnorm(n),
+  x2 = rnorm(n),
+  x3 = rnorm(n),
+  x4 = rnorm(n),
+  y  = rep(c(0, 1), length.out = n)  # binary outcome
+)
+
+head(survey_data)
+```
+
+## Fitting a single model with `wElnet()`
+
+`wElnet()` fits a weighted elastic net model for a single value of `alpha`
+(the mixing parameter between ridge and LASSO penalties), selecting the
+optimal `lambda` by replicate-weight cross-validation.
+
+```{r fit-single}
+fit <- wElnet(
+  data    = survey_data,
+  col.y   = "y",
+  col.x   = c("x1", "x2", "x3", "x4"),
+  family  = "binomial",
+  alpha   = 0.5,
+  cluster = "psu",
+  strata  = "strata",
+  weights = "weight",
+  method  = "dCV",
+  k = 4, R = 1
+)
+
+fit
+```
+
+Printing the fitted object (via `print.w.elnet()`) summarizes the key
+results: the alpha used, the selected `lambda.min`, its weighted error, and
+the number of nonzero coefficients at that lambda.
+
+### Visualizing a single fit
+
+Two plotting interfaces are available for `w.elnet` objects: a base R
+`plot()` method, and a `ggplot2`-based `autoplot()` method.
+
+```{r plot-single, fig.alt = "Weighted error vs. log(lambda) for a single alpha"}
+plot(fit)
+```
+
+```{r autoplot-single, fig.alt = "ggplot2 version of the error profile for a single alpha"}
+library(ggplot2)
+autoplot(fit)
+```
+
+Both show the weighted error across the lambda grid, with the selected
+`lambda.min` marked.
+
+## Searching across multiple alphas with `par_wElnet()`
+
+In practice, you'll usually want to compare several `alpha` values (e.g. a
+grid spanning ridge to LASSO) rather than fixing one in advance.
+`par_wElnet()` fits `wElnet()` once per alpha, in parallel across CPU cores,
+and reports the best (alpha, lambda) combination.
+
+```{r fit-parallel, eval = FALSE}
+alpha_grid <- c(0, 0.25, 0.5, 0.75, 1)
+
+par_fit <- par_wElnet(
+  alpha   = alpha_grid,
+  n.cores = 2,
+  data    = survey_data,
+  col.y   = "y",
+  col.x   = c("x1", "x2", "x3", "x4"),
+  family  = "binomial",
+  cluster = "psu",
+  strata  = "strata",
+  weights = "weight",
+  method  = "dCV",
+  k = 4, R = 1
+)
+
+par_fit
+```
+
+```
+#> Parallel Weighted Elastic Net over 5 alpha value(s)
+#>
+#>   alpha lambda.min min.error
+#> 1  0.00     0.0847     0.251
+#> 2  0.25     0.0391     0.248
+#> 3  0.50     0.0312     0.246
+#> 4  0.75     0.0288     0.247
+#> 5  1.00     0.0265     0.249
+#>
+#> Best alpha: 0.5
+```
+
+(This chunk is not evaluated when the vignette is built, since spawning a
+parallel cluster is best avoided in automated/non-interactive build
+environments such as `R CMD check`. It runs normally in an interactive R
+session or script.)
+
+### Visualizing results across alphas
+
+`plot()` and `autoplot()` methods are also available for `par.w.elnet`
+objects, showing both the error profile for every alpha and a summary of
+the best error achieved by each:
+
+```r
+plot(par_fit)                     # both panels: profile + summary
+plot(par_fit, type = "profile")   # just the error-vs-lambda curves, one per alpha
+plot(par_fit, type = "summary")   # just the best-error-vs-alpha curve
+
+autoplot(par_fit)                              # combined (requires patchwork)
+autoplot(par_fit, type = "profile", facet = TRUE)  # one panel per alpha
+```
+
+## Using a `survey::svydesign()` object instead
+
+If you already have a `survey.design` object, you can pass it directly via
+the `design` argument instead of specifying `cluster`/`strata`/`weights`
+separately:
+
+```{r design-example}
+des <- survey::svydesign(
+  ids = ~psu, strata = ~strata, weights = ~weight,
+  nest = TRUE, data = survey_data
+)
+
+fit_des <- wElnet(
+  col.y = "y", col.x = c("x1", "x2", "x3", "x4"),
+  design = des,
+  family = "binomial", alpha = 0.5,
+  method = "dCV", k = 4, R = 1
+)
+
+fit_des$alpha
+```
+
+## Other replicate-weight methods
+
+`method` also accepts `"JKn"` (jackknife), `"BRR"`, `"bootstrap"`,
+`"subbootstrap"`, `"split"`, and `"extrapolation"`, each implemented via
+[replicate_weights()]. For example, a jackknife fit:
+
+```{r jkn-example}
+fit_jkn <- wElnet(
+  data = survey_data, col.y = "y", col.x = c("x1", "x2", "x3", "x4"),
+  family = "binomial", alpha = 0.5,
+  cluster = "psu", strata = "strata", weights = "weight",
+  method = "JKn"
+)
+
+fit_jkn
+```
+
+See `?replicate_weights` for details on each method and how its training/test
+replicate-weight columns are constructed. 
+
+**Note:** Global options to avoid only one PSU in a stratum in a particular domain or subpopulation can be set at the beginning when getting errors with other methods: 
+
+```
+#>  options(survey.adjust.domain.lonely=TRUE)
+#>  options(survey.lonely.psu="adjust")
+```
+## Next steps
+
+- `?wXGBoost` and `?wRandomforest` extend the same replicate-weight
+  framework to gradient boosting and random forests.
+- `?optim_wxgb_para` automates hyperparameter search for `wXGBoost()`.
+- See the function reference index for the complete list of available
+  models, utilities, and plotting methods.

@@ -197,7 +197,7 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,final.model
     }
     strata <- as.character(design$call$strata[2])
     weights <- as.character(design$call$weights[2])
-    data <- get(design$call$data)
+    data <- design$variables
   }
 
 
