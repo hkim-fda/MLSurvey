@@ -25,9 +25,9 @@ ci_wauc(
 )
 }
 \arguments{
-\item{y}{A vector of response variable or a string of its name.}
+\item{y}{A vector of response variable or a string of its name (requires \code{data} to be supplied).}
 
-\item{yhat}{A vector of predicted probabilities of \code{y} or a string of its name.}
+\item{yhat}{A vector of predicted probabilities of \code{y} or a string of its name (requires \code{data} to be supplied).}
 
 \item{tag.event}{A character of the event of interest in \code{y}, e.g. disease, or condition.  Default is \code{"1"}.}
 
@@ -46,7 +46,8 @@ ci_wauc(
 If \code{data=NULL}, then specific numerical vectors must be included in  \code{y}, \code{yhat}, or
 the sampling design should be plugged into the argument \code{design}.}
 
-\item{type}{Type of replicate weights.  Note: \code{JKn} for stratified, \code{JK1} for unstratified designs.}
+\item{type}{Type of replicate weights. Choose one of \code{"JK1"}, \code{"JKn"}, \code{"bootstrap"}, or
+\code{"subbootstrap"}. Note: \code{JKn} for stratified, \code{JK1} for unstratified designs.}
 
 \item{B}{The number of bootstrap replicates.  Default is 2000.}
 
@@ -64,22 +65,35 @@ the sampling design should be plugged into the argument \code{design}.}
 confidence interval (CI) estimates
 }
 \description{
-A function to estimate a confidence interval (CI) for wAUC implemented by \code{wROC::wauc()} with replicate weights by \code{survey::as.svrepdesign()}; \code{bootstrap} is Canty and Davison’s bootstrap,
-\code{subbootstrap} is Rao and Wu’s (n − 1) bootstrap, and \code{JK1} and \code{JKn} are jackknife methods.
+A function to estimate a confidence interval (CI) for wAUC implemented by \code{wROC::wauc()} with replicate weights by \code{survey::as.svrepdesign()}; \code{bootstrap} is Canty and Davison's bootstrap,
+\code{subbootstrap} is Rao and Wu's (n − 1) bootstrap, and \code{JK1} and \code{JKn} are jackknife methods.
 }
 \examples{
-\dontrun{
+\donttest{
 data(nhanes2013_sbc)
 
 # For ad hoc adjustment for a single PSU stratum not to contribute to the variance
 options(survey.lonely.psu='remove')
 
+# yhat would typically come from a fitted model (e.g. wElnet(), wXGBoost(),
+# wRandomforest(), or any other classifier). Here we generate one directly
+# from a simple weighted logistic regression for a self-contained example.
+fit <- glm(HBP ~ INDFMPIR + BMXBMI + BMXARML + BMXLEG + BPXPLS,
+          data = nhanes2013_sbc,
+          family = binomial(), weights = nhanes2013_sbc$WTSAF2YR)
+yhat <- predict(fit, type = "response")
+
 # Conveniently, update a dataset including yhat (a vector) estimated
-# from any machine learning methods
-data1<-data.frame(nhanes2013_sbc[,c(1,64:65)],yhat)
+# from any machine learning methods. HBP, SDMVPSU, SDMVSTRA, and WTSAF2YR
+# are referenced by name (not position) to avoid any risk of selecting
+# the wrong columns.
+data1 <- data.frame(
+  nhanes2013_sbc[, c("HBP", "SDMVPSU", "SDMVSTRA", "WTSAF2YR")],
+  yhat
+)
 
 # For estimating bootstrap 95\\% CI for a model selected by dCV
-wAUC.ci<- ci_wauc("HBP", yhat,weights="WTSAF2YR",cluster="SDMVPSU",strata="SDMVSTRA",
+wAUC.ci<- ci_wauc("HBP", "yhat",weights="WTSAF2YR",cluster="SDMVPSU",strata="SDMVSTRA",
                  data=data1,type="subbootstrap",B=2000)
 #Or equivalently,
 

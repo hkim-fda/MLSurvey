@@ -98,6 +98,7 @@ by replicate weights methods, \code{wXGBoost}.  The final model is not estimated
                max_delta_step = sample(1:10, 1) ) # for very imbalanced case
 
   ## search for optimal parameters
+\donttest{
  data(nhanes2013_sbc)
  Mydesign <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA,
                      weights = ~WTSAF2YR,nest = TRUE, data = nhanes2013_sbc)
@@ -107,6 +108,7 @@ by replicate weights methods, \code{wXGBoost}.  The final model is not estimated
  ## search using bootstrap instead, with a custom B:
  opt.par.boot <- optim_wxgb_para(nhanes2013_sbc$HBP,2:61,custom,method="bootstrap",
                            B = 50, design=Mydesign,print_every_n=250L)
+}
 \dontrun{
  ## fitting the optimal model
 

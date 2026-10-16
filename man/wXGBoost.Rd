@@ -185,11 +185,13 @@ param<- xgboost::xgb.params(objective = "binary:logistic", max_depth = sample(4:
 # Variable selection and best iteration (hyper-parameter) selection:
 # Can add a xgb.DMatrix object of test data (`test.data`) to the function
 # to obtain predicted values from the final model after extra evaluation with it.
+\donttest{
 xgb.cv <- wXGBoost(data = nhanes2013_sbc,
               y = nhanes2013_sbc$HBP, col.x = 2:61,
               cluster = "SDMVPSU", strata = "SDMVSTRA", weights = "WTSAF2YR",
               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
               method = "dCV", k=10, R=20)
+              }
 \dontrun{
 # Or equivalently:
 des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,

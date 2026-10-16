@@ -4,7 +4,7 @@ Version: 1.0.0
 Authors@R: 
     person("Hyeonju", "Kim", , "hyeonjukm01@gmail.com", role = c("aut", "cre"),
     comment=c(ORCID = "0000-0002-2368-4850"))
-Description: A package for developing machine learning models by replicate weights methods for complex survey data. Currently offering weighted versions of Elastic Net, XGBoost, and randomForest for linear/logistic regression.
+Description: Fits weighted machine learning models for complex survey data using a replicate weights approach that accounts for sampling weights, strata, and clusters. Weighted versions of Elastic Net, XGBoost, and random forest are provided for linear and logistic regression, along with parallelized tuning-parameter search and companion plotting methods.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

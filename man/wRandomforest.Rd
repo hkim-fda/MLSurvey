@@ -132,6 +132,7 @@ options(survey.lonely.psu="adjust")
  # just as implemented in \code{randomForest::randomForest()}.
 
  data(nhanes2013_sbc)
+\donttest{
 dcv.rf <- wRandomforest(data = nhanes2013_sbc,
               y = as.factor(nhanes2013_sbc$HBP), col.x = 2:61,
               cluster = "SDMVPSU", strata = "SDMVSTRA", weights = "WTSAF2YR",
@@ -143,6 +144,7 @@ des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
 dcv.rf <- wRandomforest(y = as.factor(nhanes2013_sbc$HBP), col.x = 2:61, design =des,
                         importance=TRUE,proximity = TRUE,
                         method = "dCV", k=5, R=5)
+}
 
 }
 \seealso{

@@ -117,6 +117,7 @@ model selection for a sequence of alpha's by CPU parallel computing, use \code{\
  data(nhanes2013_sbc)
 # alpha can be selected based on `glmnet::glmnet()`:
 alpha <- c(0.000, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216, 0.343, 0.512, 0.729, 1.000)
+\donttest{
 en.dcv <- wElnet(data = nhanes2013_sbc,
               col.y = "HBP", col.x = 2:61,
               family = "binomial", alpha = 0.729,
@@ -129,6 +130,7 @@ des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
 en.dcv <- wElnet(col.y = "HBP", col.x = 2:61, design = des,
               family = "binomial", alpha = alpha[10],
               method = "dCV", k=10, R=20)
+}
 
 }
 \seealso{

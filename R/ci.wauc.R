@@ -1,12 +1,12 @@
 #' CI for weighted AUC (wAUC) by replicate weights
 #'
 #' @description
-#'  A function to estimate a confidence interval (CI) for wAUC implemented by \code{wROC::wauc()} with replicate weights by \code{survey::as.svrepdesign()}; \code{bootstrap} is Canty and Davison’s bootstrap,
-#'             \code{subbootstrap} is Rao and Wu’s (n − 1) bootstrap, and \code{JK1} and \code{JKn} are jackknife methods.
+#'  A function to estimate a confidence interval (CI) for wAUC implemented by \code{wROC::wauc()} with replicate weights by \code{survey::as.svrepdesign()}; \code{bootstrap} is Canty and Davison's bootstrap,
+#'             \code{subbootstrap} is Rao and Wu's (n − 1) bootstrap, and \code{JK1} and \code{JKn} are jackknife methods.
 #'
 #'
-#' @param y A vector of response variable or a string of its name.
-#' @param yhat A vector of predicted probabilities of `y` or a string of its name.
+#' @param y A vector of response variable or a string of its name (requires \code{data} to be supplied).
+#' @param yhat A vector of predicted probabilities of `y` or a string of its name (requires \code{data} to be supplied).
 #' @param tag.event A character of the event of interest in `y`, e.g. disease, or condition.  Default is \code{"1"}.
 #' @param tag.nonevent A character of the non-event in `y`, e.g. non-disease, or non-condition.  Default is \code{"0"}.
 #' @param cluster A character string of a cluster identifier. It could be \code{NULL} if the sampling design were plugged in the \code{design} argument.
@@ -17,7 +17,8 @@
 #'             \code{weights = NULL} assumes equal probability generating `1's`.
 #'             If \code{data=NULL}, then specific numerical vectors must be included in  \code{y}, \code{yhat}, or
 #'             the sampling design should be plugged into the argument \code{design}.
-#' @param type Type of replicate weights.  Note: \code{JKn} for stratified, \code{JK1} for unstratified designs.
+#' @param type Type of replicate weights. Choose one of \code{"JK1"}, \code{"JKn"}, \code{"bootstrap"}, or
+#'             \code{"subbootstrap"}. Note: \code{JKn} for stratified, \code{JK1} for unstratified designs.
 #' @param B The number of bootstrap replicates.  Default is 2000.
 #' @param conf.level The width of confidence interval. Default is 0.95.
 #' @param fpc,fpctype Passed to \code{jk1weights, jknweights, brrweights, bootweights, subbootweights}, or \code{mrbweights}.
@@ -32,18 +33,31 @@
 #'
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' data(nhanes2013_sbc)
 #'
 #' # For ad hoc adjustment for a single PSU stratum not to contribute to the variance
 #' options(survey.lonely.psu='remove')
 #'
+#' # yhat would typically come from a fitted model (e.g. wElnet(), wXGBoost(),
+#' # wRandomforest(), or any other classifier). Here we generate one directly
+#' # from a simple weighted logistic regression for a self-contained example.
+#' fit <- glm(HBP ~ INDFMPIR + BMXBMI + BMXARML + BMXLEG + BPXPLS,
+#'           data = nhanes2013_sbc,
+#'           family = binomial(), weights = nhanes2013_sbc$WTSAF2YR)
+#' yhat <- predict(fit, type = "response")
+#'
 #' # Conveniently, update a dataset including yhat (a vector) estimated
-#' # from any machine learning methods
-#' data1<-data.frame(nhanes2013_sbc[,c(1,64:65)],yhat)
+#' # from any machine learning methods. HBP, SDMVPSU, SDMVSTRA, and WTSAF2YR
+#' # are referenced by name (not position) to avoid any risk of selecting
+#' # the wrong columns.
+#' data1 <- data.frame(
+#'   nhanes2013_sbc[, c("HBP", "SDMVPSU", "SDMVSTRA", "WTSAF2YR")],
+#'   yhat
+#' )
 #'
 #' # For estimating bootstrap 95\% CI for a model selected by dCV
-#' wAUC.ci<- ci_wauc("HBP", yhat,weights="WTSAF2YR",cluster="SDMVPSU",strata="SDMVSTRA",
+#' wAUC.ci<- ci_wauc("HBP", "yhat",weights="WTSAF2YR",cluster="SDMVPSU",strata="SDMVSTRA",
 #'                  data=data1,type="subbootstrap",B=2000)
 #' #Or equivalently,
 #'
@@ -60,31 +74,40 @@
 
 ### weights,cluster,strata are names in data (character) unless design is included.
 #set.seed(234)
-# ci.wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,cluster=NULL,strata=NULL,design=NULL,data=NULL,
-#                    type=c("JK1","JKn", "bootstrap", "subbootstrap","mrbbootstrap", "BRR"),B=2000,conf.level=0.95,
-#                    fpc=NULL,fpctype=NULL,..., compress=TRUE,
-#                    mse=getOption("survey.replicates.mse"))
 ci_wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,cluster=NULL,strata=NULL,design=NULL,data=NULL,
                      type=c("JK1","JKn", "bootstrap", "subbootstrap"),B=2000,conf.level=0.95,
                      fpc=NULL,fpctype=NULL,..., compress=TRUE,
                      mse=getOption("survey.replicates.mse")){
 
-  # Step 0: Notation
-#   if(!is.null(data)){
-#   if(inherits(y, "character")){
-#     y <- data[,y]
-#   }
-#
-#   if(length(table(y))!=2){stop("Response variable must have two classes.")}
-#
-#   if(inherits(yhat, "character")){
-#     yhat <- data[,yhat]
-#   }
-#     # if(inherits(weights, "character")){
-#     #   weights.var <- data[,weights]
-#     # }
-# }
+  type <- match.arg(type)
 
+  # Step -1: Resolve y/yhat if supplied as column-name strings rather than
+  # vectors. This activates what was previously documented (@param y/@param
+  # yhat both state "or a string of its name") but not implemented -- y and
+  # yhat were always passed straight through to svyROC::wauc() regardless of
+  # type, which silently misbehaved if a bare string was passed instead of
+  # the vector it named.
+  if(inherits(y, "character") && length(y) == 1){
+    if(is.null(data)){
+      stop("'y' was supplied as a column name (a single string), but 'data' is NULL. ",
+          "Either supply 'data' containing a column named '", y, "', or pass 'y' directly as a vector.")
+    }
+    y <- data[, y]
+  }
+
+  if(inherits(yhat, "character") && length(yhat) == 1){
+    if(is.null(data)){
+      stop("'yhat' was supplied as a column name (a single string), but 'data' is NULL. ",
+          "Either supply 'data' containing a column named '", yhat, "', or pass 'yhat' directly as a vector.")
+    }
+    yhat <- data[, yhat]
+  }
+
+  if(length(table(y)) != 2){
+    stop("Response variable 'y' must have exactly two classes.")
+  }
+
+  # Step 0: Notation
   if(!is.null(design)){
     cluster <- as.character(design$call$id[2])
     if(cluster == "1" || cluster == "0"){
@@ -117,13 +140,26 @@ ci_wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,clust
       }
     } else{
       formula.strata <- as.formula(paste0("~", strata))
-      if(is.null(cluster) || is.null(weights)){stop("Error. No cluster or weights supplied.")}
+      if(is.null(cluster)){stop("Error. No cluster supplied.")}
       formula.cluster <- as.formula(paste0("~", cluster))
-      formula.weights <- as.formula(paste0("~", weights))
-      design <- survey::svydesign(ids = formula.cluster,
-                                  strata = formula.strata,
-                                  weights = formula.weights,
-                                  data = data, nest=TRUE)
+
+      # BUG FIX: previously this branch unconditionally required 'weights'
+      # to be non-NULL whenever 'strata' was supplied, even though an
+      # unweighted stratified design (equal-probability sampling within
+      # strata) is a legitimate survey design -- the strata-less branch
+      # above already correctly supported weights = NULL; this branch is
+      # now brought into line with it.
+      if(is.null(weights)){
+        design <- survey::svydesign(ids = formula.cluster,
+                                    strata = formula.strata,
+                                    data = data, nest=TRUE)
+      } else {
+        formula.weights <- as.formula(paste0("~", weights))
+        design <- survey::svydesign(ids = formula.cluster,
+                                    strata = formula.strata,
+                                    weights = formula.weights,
+                                    data = data, nest=TRUE)
+      }
 
     }
 
@@ -139,7 +175,25 @@ ci_wauc<- function(y,yhat,tag.event = "1", tag.nonevent = "0",weights=NULL,clust
     }
 
 
-      rep.weights<-rep.des$repweights$weights
+      rep.weights.raw <- rep.des$repweights$weights
+
+      # BUG FIX: rep.des$repweights$weights is sized by the number of
+      # clusters/PSUs, NOT the number of observations in the original data
+      # (e.g. 12 rows for 12 PSUs, vs. 240 observations). Using it directly
+      # against y/yhat (length = nrow(data)) either errors outright
+      # (svyROC::wauc()'s own length check, as seen when weights = NULL) or,
+      # worse, silently "succeeds" via R's vector recycling whenever
+      # nrow(data) happens to be a clean multiple of the number of clusters
+      # -- which recycles cluster-level weights in the wrong, arbitrary
+      # cycling order rather than mapping each unit to the weight of the
+      # cluster it actually belongs to, silently corrupting every
+      # downstream wAUC replicate. The correct approach (matching the
+      # equivalent expansion in error.f(), used by wElnet()) is to expand
+      # the cluster-level matrix to unit-level via
+      # rep.des$repweights$index, which records which cluster each
+      # observation belongs to.
+      rep.weights <- apply(rep.weights.raw, 2, function(x){x[rep.des$repweights$index]})
+
       wauc.B<- rep(0,B)
       if(is.null(weights)){
        for(b in 1:B){
