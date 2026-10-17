@@ -2,11 +2,7 @@
 
 ## *M*achine *L*earning for Complex *S*urvey Data
 
-<!-- badges: start -->
-
-[![R-CMD-check](https://github.com/hkim-fda/MLsurvey/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hkim-fda/MLSurvey/actions/workflows/R-CMD-check.yaml)
-
-<!-- badges: end -->
+[![R-CMD-check](https://github.com/hkim-fda/MLSurvey/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/hkim-fda/MLSurvey/actions/workflows/R-CMD-check.yaml)
 
 **MLSurvey** is a R-package to develop Machine Learning models for complex survey data using suitable Cross-Validation methods: replicate weights methods. This ML tool currently offers weighted Elastic Net (**wElnet**) for a single $\alpha$, its CPU parallel computing (**par_wElnet**) for a sequence of $\alpha$'s, generic plots (*plot*) and ggplot2 supported counterparts (*autoplot*) for both computation results. It also supports weighted random forest (**wRandomforest**), and weighted XGBoost (**wXGBoost**) with random optimal (hyper-)parameter search (*optim_wxgb_para*). Confidential interval (*ci_wauc*) for weighted area under the ROC curve (wAUC) is computed by bootstrap.
 
