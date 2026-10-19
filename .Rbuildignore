@@ -1,5 +1,8 @@
+^\.Rd2pdf.*$
+^MLSurvey-manual\.tex$
 ^MLSurvey\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^cran-comments\.md$
 ^\.github$
+^CRAN-SUBMISSION$

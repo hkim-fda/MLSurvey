@@ -2,7 +2,7 @@
 #'
 #' @description
 #'  A function to estimate a confidence interval (CI) for wAUC implemented by \code{wROC::wauc()} with replicate weights by \code{survey::as.svrepdesign()}; \code{bootstrap} is Canty and Davison's bootstrap,
-#'             \code{subbootstrap} is Rao and Wu's (n − 1) bootstrap, and \code{JK1} and \code{JKn} are jackknife methods.
+#'             \code{subbootstrap} is Rao and Wu's (n-1) bootstrap, and \code{JK1} and \code{JKn} are jackknife methods.
 #'
 #'
 #' @param y A vector of response variable or a string of its name (requires \code{data} to be supplied).

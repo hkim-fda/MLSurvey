@@ -1,6 +1,8 @@
+.Rd2pdf*
 .Rproj.user
 .Rhistory
 .Rdata
 .httr-oauth
 .DS_Store
 inst/doc
+*-manual.tex
