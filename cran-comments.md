@@ -1,6 +1,6 @@
 ## Resubmission
 
-This is a resubmission. In this version I have: \* Fixed a Unicode character (U+2212) in Rd documentation that caused LaTeX errors when building the PDF manual on r-devel-linux-x86_64-debian-gcc and r-devel-windows-x86_64.
+This is a resubmission. In this version I have \* Fixed a Unicode character (U+2212) in Rd documentation that caused LaTeX errors when building the PDF manual on r-devel-linux-x86_64-debian-gcc and r-devel-windows-x86_64.
 
 ## R CMD check results
 
@@ -13,7 +13,7 @@ This is a resubmission. In this version I have: \* Fixed a Unicode character (U+
 - GitHub Actions (windows-latest): R release
 - GitHub Actions (macos-latest): R release
 
-All GitHub Actions check runs passed with 0 errors, 0 warnings, 0 notes. See: <https://github.com/hkim-fda/MLSurvey/actions/runs/38986512717> (commit 02ed49e)
+All GitHub Actions check runs passed with 0 errors, 0 warnings, 0 notes. See: <https://github.com/hkim-fda/MLSurvey/actions/runs/39292058951> (commit 9b05366)
 
 ## Downstream dependencies
 
