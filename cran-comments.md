@@ -17,7 +17,7 @@ This is a resubmission. In this version, the following corrections have been mad
 - GitHub Actions (windows-latest): R release
 - GitHub Actions (macos-latest): R release
 
-All GitHub Actions check runs passed with 0 errors, 0 warnings, 0 notes. See: <https://github.com/hkim-fda/MLSurvey/actions/runs/> (commit )
+All GitHub Actions check runs passed with 0 errors, 0 warnings, 0 notes. See: <https://github.com/hkim-fda/MLSurvey/actions/runs/41161205469> (commit edacf96 )
 
 ## Downstream dependencies
 
