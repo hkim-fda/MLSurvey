@@ -124,7 +124,7 @@ data_rw <- replicate_weights(data = nhanes2013_sbc,
                              rw.test = TRUE)
 
 ## split ---------------------------------------------------------------------
-\dontrun{
+\donttest{
 data_rw <- replicate_weights(data = nhanes2013_sbc,
                              method = "split",
                              cluster = "SDMVPSU",

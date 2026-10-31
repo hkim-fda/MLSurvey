@@ -160,7 +160,7 @@ minimizing the average weighted error across all fits.
 }\if{html}{\out{</div>}}
 }
 \examples{
-\dontrun{
+\donttest{
 library(MLSurvey)
 data(nhanes2013_sbc)
 alpha <- c(0.000, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216, 0.343, 0.512, 0.729, 1.000)

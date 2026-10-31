@@ -24,7 +24,7 @@ of nonzero coefficients (degrees of freedom) at that lambda, and the
 size of the lambda grid that was searched.
 }
 \examples{
-\dontrun{
+\donttest{
 library(MLSurvey)
 data(nhanes2013_sbc)
 

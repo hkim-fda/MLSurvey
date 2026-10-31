@@ -100,7 +100,7 @@
 #' @seealso [wElnet()] for the single-alpha model fit that this function parallelizes.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(MLSurvey)
 #' data(nhanes2013_sbc)
 #' alpha <- c(0.000, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216, 0.343, 0.512, 0.729, 1.000)
@@ -148,10 +148,28 @@ par_wElnet <- function(alpha = c(0.000, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216
 
   n.alpha <- length(alpha)
 
+  # --- Respect CRAN's parallel-processing policy --------------------------
+  # R CMD check (and CRAN's own automated checks) set _R_CHECK_LIMIT_CORES_
+  # when running examples/tests/vignettes, and parallel::makeCluster() will
+  # hard-error via .check_ncores() if more than 2 workers are requested in
+  # that context. We detect this and cap n.cores at 2 regardless of what the
+  # user supplied, so the \donttest{} example in this file's documentation
+  # (and any test suite that calls par_wElnet()) passes under CRAN's checks
+  # without requiring the end user to think about this at all.
+  check_limit <- Sys.getenv("_R_CHECK_LIMIT_CORES_", "")
+  on_cran_check <- nzchar(check_limit) && check_limit != "FALSE"
+
   if(is.null(n.cores)){
-    n.cores <- max(1, min(parallel::detectCores() - 1, n.alpha))
+    n.cores <- if(on_cran_check){
+      min(2L, n.alpha)
+    } else {
+      max(1, min(parallel::detectCores() - 1, n.alpha))
+    }
   }
-  n.cores <- min(n.cores, n.alpha)  # never spin up more workers than alphas
+  n.cores <- min(n.cores, n.alpha)      # never spin up more workers than alphas
+  # hard CRAN ceiling, even if user set n.cores explicitly
+  if(on_cran_check) n.cores <- min(n.cores, 2L)
+
 
   # Explicitly force every argument that fit_one_alpha() below will capture
   # as a closure. Without this, R's lazy evaluation means some arguments
@@ -183,8 +201,8 @@ par_wElnet <- function(alpha = c(0.000, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216
   # workers are independent fresh R processes, so forking the RStudio
   # session's GUI/graphics-device state (a risk with "FORK" clusters) never
   # comes into play.
-  cat("Fitting", n.alpha, "alpha value(s) across", n.cores,
-      "CPU core(s) using a PSOCK cluster (safe for RStudio on all platforms)...\n")
+  message("Fitting ", n.alpha, "alpha value(s) across ", n.cores,
+      " CPU core(s) using a PSOCK cluster (safe for RStudio on all platforms)...")
 
   cl <- parallel::makeCluster(n.cores, type = "PSOCK")
   on.exit(parallel::stopCluster(cl), add = TRUE)
@@ -252,10 +270,6 @@ par_wElnet <- function(alpha = c(0.000, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216
 
   best.idx    <- which.min(summary.df$min.error)
   best.result <- results[[best.idx]]
-
-  cat("Best alpha:", alpha[best.idx],
-      "| lambda.min =", signif(summary.df$lambda.min[best.idx], 4),
-      "| average error =", signif(summary.df$min.error[best.idx], 4), "\n")
 
   out <- list(
     results    = results,

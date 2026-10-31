@@ -103,7 +103,7 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
   }
 
   if(method %in% c("JKn", "bootstrap", "subbootstrap", "BRR")){
-    if(R!=1){cat("Selected method:", method,". For this method, R = 1. Thus, the argument R =",R, "has been ignored.")}
+    if(R!=1){message("Selected method: ", method,". For this method, R = 1. Thus, the argument R = ",R, " has been ignored.")}
   }
 
   if(method %in% c("dCV", "split", "extrapolation")){
@@ -112,7 +112,7 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
   }
 
   if(method != "dCV"){
-    if(!is.null(k) & k!=10){cat("Selected method:", method,". The argument k =",k, "is not needed and, hence, has been ignored.")}
+    if(!is.null(k) & k!=10){message("Selected method: ", method,". The argument k = ",k, " is not needed and, hence, has been ignored.")}
   }
 
   if(method == "dCV"){
@@ -121,7 +121,7 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
   }
 
   if(!(method %in% c("bootstrap", "subbootstrap"))){
-    if(!is.null(B) & B!=200){cat("Selected method:", method,". The argument B =",B, "is not needed and, hence, has been ignored.")}
+    if(!is.null(B) & B!=200){message("Selected method: ", method,". The argument B = ",B, " is not needed and, hence, has been ignored.")}
   }
 
   if(method %in% c("bootstrap", "subbootstrap")){
@@ -261,7 +261,7 @@ wElnet <- function(data = NULL, col.y = NULL, col.x = NULL,
 #' @return Invisibly returns \code{x}. Called for its side effect of printing to the console.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(MLSurvey)
 #' data(nhanes2013_sbc)
 #'

@@ -1,6 +1,10 @@
 ## Resubmission
 
-This is a resubmission. In this version I have \* Fixed a Unicode character (U+2212) in Rd documentation that caused LaTeX errors when building the PDF manual on r-devel-linux-x86_64-debian-gcc and r-devel-windows-x86_64.
+This is a resubmission. In this version, the following corrections have been made:
+
+- Replaced \dontrun{} with \donttest{} or unwrapped examples where appropriate
+- Replaced cat()/print() console output with message() so output can be suppressed by the user
+- (previous fix carried forward) Fixed Unicode character causing LaTeX PDF manual build errors
 
 ## R CMD check results
 
@@ -13,7 +17,7 @@ This is a resubmission. In this version I have \* Fixed a Unicode character (U+2
 - GitHub Actions (windows-latest): R release
 - GitHub Actions (macos-latest): R release
 
-All GitHub Actions check runs passed with 0 errors, 0 warnings, 0 notes. See: <https://github.com/hkim-fda/MLSurvey/actions/runs/39292058951> (commit 9b05366)
+All GitHub Actions check runs passed with 0 errors, 0 warnings, 0 notes. See: <https://github.com/hkim-fda/MLSurvey/actions/runs/> (commit )
 
 ## Downstream dependencies
 

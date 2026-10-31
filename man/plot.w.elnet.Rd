@@ -31,7 +31,7 @@ the selected \code{lambda.min}. This is the single-alpha counterpart to
 \code{\link[=plot.par.w.elnet]{plot.par.w.elnet()}}, which handles the multi-alpha output of \code{\link[=par_wElnet]{par_wElnet()}}.
 }
 \examples{
-\dontrun{
+\donttest{
 library(MLSurvey)
 data(nhanes2013_sbc)
 

@@ -94,7 +94,7 @@ arguments) can always be added afterward with \code{+}, e.g.
 \code{autoplot(en.par, type = "profile") + ggplot2::theme_bw()}.
 }
 \examples{
-\dontrun{
+\donttest{
 library(MLSurvey)
 library(ggplot2)
 data(nhanes2013_sbc)

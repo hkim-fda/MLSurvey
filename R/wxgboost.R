@@ -129,7 +129,7 @@
 #'               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
 #'               method = "dCV", k=10, R=20)
 #'               }
-#'\dontrun{
+#'\donttest{
 #' # Or equivalently:
 #' des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
 #'                               nest = TRUE, data = nhanes2013_sbc)
@@ -163,7 +163,7 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,final.model
   }
 
   if(method %in% c("JKn", "bootstrap", "subbootstrap", "BRR")){
-    if(R!=1){cat("Selected method:", method,". For this method, R = 1. Thus, the argument R =",R, "has been ignored.")}
+    if(R!=1){message("Selected method: ", method,". For this method, R = 1. Thus, the argument R = ",R, " has been ignored.")}
   }
 
   if(method %in% c("dCV", "split", "extrapolation")){
@@ -172,7 +172,7 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,final.model
   }
 
   if(method != "dCV"){
-    if(!is.null(k) & k!=10){cat("Selected method:", method,". The argument k =",k, "is not needed and, hence, has been ignored.")}
+    if(!is.null(k) & k!=10){message("Selected method: ", method,". The argument k = ",k, " is not needed and, hence, has been ignored.")}
   }
 
   if(method == "dCV"){
@@ -181,7 +181,7 @@ wXGBoost <- function(data = NULL, y =NULL, col.x = NULL,missing = NA,final.model
   }
 
   if(!(method %in% c("bootstrap", "subbootstrap"))){
-    if(!is.null(B) & B!=200){cat("Selected method:", method,". The argument B =",B, "is not needed and, hence, has been ignored.")}
+    if(!is.null(B) & B!=200){message("Selected method: ", method,". The argument B = ",B, " is not needed and, hence, has been ignored.")}
   }
 
   if(method %in% c("bootstrap", "subbootstrap")){

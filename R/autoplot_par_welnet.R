@@ -60,7 +60,7 @@
 #'         installed, a named list of two \code{ggplot} objects: \code{$profile} and \code{$summary}.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(MLSurvey)
 #' library(ggplot2)
 #' data(nhanes2013_sbc)
@@ -244,7 +244,7 @@ autoplot.par.w.elnet <- function(object, type = c("both", "profile", "summary"),
 #' @return A single \code{ggplot} object.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(MLSurvey)
 #' library(ggplot2)
 #' data(nhanes2013_sbc)

@@ -192,7 +192,7 @@ xgb.cv <- wXGBoost(data = nhanes2013_sbc,
               params = param, nrounds =10000,verbose=0,early_stopping_rounds=5,
               method = "dCV", k=10, R=20)
               }
-\dontrun{
+\donttest{
 # Or equivalently:
 des <- survey::svydesign(ids=~SDMVPSU, strata = ~SDMVSTRA, weights = ~WTSAF2YR,
                               nest = TRUE, data = nhanes2013_sbc)

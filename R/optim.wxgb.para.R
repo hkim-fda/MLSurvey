@@ -58,20 +58,20 @@
 #'  opt.par.boot <- optim_wxgb_para(nhanes2013_sbc$HBP,2:61,custom,method="bootstrap",
 #'                            B = 50, design=Mydesign,print_every_n=250L)
 #'}
-#' \dontrun{
+#' \donttest{
 #'  ## fitting the optimal model
 #'
 #'  ### The data needs to be a sparse matrix without intercept.
 #'  ### Generate a sparse matrix from a regular dataset for training
 #'  unwtData<-nhanes2013_sbc[,-c(62:66)]   #excluding weight related vectors
-#'  Mat<- sparse.model.matrix(HBP~. ,data = unwtData )[,-1]   #dropping intercept
-#'  wtData <- xgb.DMatrix(data = nhanes2013_sbc,label=nhanes2013_sbc$HBP,
+#'  Mat<- Matrix::sparse.model.matrix(HBP~. ,data = unwtData )[,-1]   #dropping intercept
+#'  wtData <- xgboost::xgb.DMatrix(data = nhanes2013_sbc,label=nhanes2013_sbc$HBP,
 #'                        weight=nhanes2013_sbc$WTSAF2YR)
 #'
 #' # Can include test data--it should be a xgb.DMatrix object--
-#' # in `evals` with `early_stopping_rounds` for better performance.
-#'  wxgb<-xgb.train(data=wtData, params=opt.par$params, nrounds=opt.par$nrounds,
-#'            early_stopping_rounds=10,evals=list(train=wtData,test=test.data),
+#' # e.g., `eval=list(train=data1,test=data2)`.
+#'  wxgb<-xgboost::xgb.train(data=wtData, params=opt.par$params, nrounds=opt.par$nrounds,
+#'            evals=list(train=wtData),
 #'            custom_metric = evalerror_bin, verbose=0)
 #'}
 #' @export
@@ -115,7 +115,7 @@ optim_wxgb_para<-function(y,col.x,custom_space = list(),nitr=50,nfolds=10,R=1,B=
                                    print.rw = FALSE, save_period = NULL, save_name = "wxgboost.model",
                                     callbacks = list())}, error = function(e) {
                                       # This prints the specific error message to your console
-                                      message(paste0("\n!! Warning: Iteration ", iter, " failed. Error details: ", e$message))
+                                      message(paste0("!! Warning: Iteration ", iter, " failed. Error details: ", e$message))
                                       return(NULL)
                                     })
                     # Handle failed iterations gracefully

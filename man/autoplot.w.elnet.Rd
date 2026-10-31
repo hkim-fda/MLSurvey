@@ -48,7 +48,7 @@ selected \code{lambda.min}. This is the single-alpha counterpart to
 }\if{html}{\out{</div>}}
 }
 \examples{
-\dontrun{
+\donttest{
 library(MLSurvey)
 library(ggplot2)
 data(nhanes2013_sbc)

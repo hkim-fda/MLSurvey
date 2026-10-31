@@ -59,7 +59,7 @@
 #'                              rw.test = TRUE)
 #'
 #' ## split ---------------------------------------------------------------------
-#' \dontrun{
+#' \donttest{
 #' data_rw <- replicate_weights(data = nhanes2013_sbc,
 #'                              method = "split",
 #'                              cluster = "SDMVPSU",
@@ -134,7 +134,7 @@ replicate_weights <- function(data,
   }
 
   if(method %in% c("JKn", "bootstrap", "subbootstrap", "BRR")){
-    if(R!=1){cat("Selected method:", method,". For this method, R = 1. Thus, the argument R =",R, "has been ignored.")}
+    if(R!=1){message("Selected method:", method,". For this method, R = 1. Thus, the argument R =",R, "has been ignored.")}
   }
 
   if(method %in% c("dCV", "split", "extrapolation")){
@@ -143,7 +143,7 @@ replicate_weights <- function(data,
   }
 
   if(method != "dCV"){
-    if(!is.null(k) & k!=10){cat("Selected method:", method,". The argument k =",k, "is not needed and, hence, has been ignored.")}
+    if(!is.null(k) & k!=10){message("Selected method:", method,". The argument k =",k, "is not needed and, hence, has been ignored.")}
   }
 
   if(method == "dCV"){
@@ -152,7 +152,7 @@ replicate_weights <- function(data,
   }
 
   if(!(method %in% c("bootstrap", "subbootstrap"))){
-    if(!is.null(B) & B!=200){cat("Selected method:", method,". The argument B =",B, "is not needed and, hence, has been ignored.")}
+    if(!is.null(B) & B!=200){message("Selected method:", method,". The argument B =",B, "is not needed and, hence, has been ignored.")}
   }
 
   if(method %in% c("bootstrap", "subbootstrap")){
@@ -532,7 +532,7 @@ split_sample <- function(data, train.prob, r,
 
   train.0 <- table(data[which(data[,set]=="train"), strata])==0
   if(sum(train.0) != 0){
-    h.0 <- which(train.0 == 1)
+    h.0 <- names(which(train.0 == TRUE))
     for(hh in h.0){
       id.hh <- which(data[,strata]==hh)
       psu.h <- unique(data$hclus[id.hh])
@@ -544,7 +544,7 @@ split_sample <- function(data, train.prob, r,
 
   test.0 <- table(data[which(data[,set]=="test"), strata])==0
   if(sum(test.0) != 0){
-    h.0 <- which(test.0 == 1)
+    h.0 <-  names(which(test.0 == TRUE))
     for(hh in h.0){
       id.hh <- which(data[,strata]==hh)
       psu.h <- unique(data$hclus[id.hh])

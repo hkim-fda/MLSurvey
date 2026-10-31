@@ -41,7 +41,7 @@
 #' @return Invisibly returns \code{x}. Called for its side effect of producing a plot.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(MLSurvey)
 #' data(nhanes2013_sbc)
 #' alpha <- c(0.000, 0.001, 0.008, 0.027, 0.064, 0.125, 0.216, 0.343, 0.512, 0.729, 1.000)
@@ -177,7 +177,7 @@ plot.par.w.elnet <- function(x, type = c("both", "profile", "summary"),
 #' @return Invisibly returns \code{x}. Called for its side effect of producing a plot.
 #'
 #' @examples
-#' \dontrun{
+#' \donttest{
 #' library(MLSurvey)
 #' data(nhanes2013_sbc)
 #'

@@ -129,7 +129,7 @@ wRandomforest <- function(data = NULL, col.x = NULL, y = NULL, xtest=NULL,ytest=
   }
 
   if(method %in% c("JKn", "BRR")){
-    if(R!=1){cat("Selected method:", method,". For this method, R = 1. Thus, the argument R =",R, "has been ignored.")}
+    if(R!=1){message("Selected method: ", method,". For this method, R = 1. Thus, the argument R = ",R, "has been ignored.")}
   }
 
   if(method %in% c("dCV", "split", "extrapolation")){
@@ -138,7 +138,7 @@ wRandomforest <- function(data = NULL, col.x = NULL, y = NULL, xtest=NULL,ytest=
   }
 
   if(method != "dCV"){
-    if(!is.null(k) & k!=10){cat("Selected method:", method,". The argument k =",k, "is not needed and, hence, has been ignored.")}
+    if(!is.null(k) & k!=10){message("Selected method: ", method,". The argument k = ",k, " is not needed and, hence, has been ignored.")}
   }
 
   if(method == "dCV"){
