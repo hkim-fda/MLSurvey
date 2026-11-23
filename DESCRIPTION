@@ -32,3 +32,5 @@ Config/testthat/edition: 3
 LazyData: true       
 Config/roxygen2/version: 8.0.0
 VignetteBuilder: knitr
+URL: https://github.com/hkim-fda/MLsurvey
+BugReports: https://github.com/hkim-fda/MLsurvey/issues
